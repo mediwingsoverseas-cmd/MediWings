@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">MediWings</string>
+    <string name="app_logo">App Logo</string>
+    <string name="app_name_styled">MediWings</string>
+    <string name="new_user_create_account">New user? Create Account</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+</resources>

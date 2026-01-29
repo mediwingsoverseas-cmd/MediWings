@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <View
+        android:id="@+id/view_indicator"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@android:drawable/presence_invisible"
+        android:layout_marginTop="4dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="16dp">
+
+        <TextView
+            android:id="@+id/tvStepTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Step Title"
+            android:textColor="#333333"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvStepDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Status description"
+            android:textColor="#666666"
+            android:textSize="14sp"/>
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="30dp"
+            android:background="#CCCCCC"
+            android:layout_marginStart="-27dp"
+            android:id="@+id/view_line"/>
+    </LinearLayout>
+</LinearLayout>
