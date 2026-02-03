@@ -74,10 +74,6 @@ class AdminAddUniversityActivity : AppCompatActivity() {
         Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show()
         
         storageRef.putFile(imageUri!!)
-            .addOnProgressListener { taskSnapshot ->
-                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                // Update progress if needed
-            }
             .addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
                     val uniId = database.reference.child("Universities").push().key ?: return@addOnSuccessListener

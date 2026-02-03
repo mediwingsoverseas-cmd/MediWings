@@ -269,10 +269,6 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         
         // Upload with proper error handling
         storageRef.putFile(uri)
-            .addOnProgressListener { taskSnapshot ->
-                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                // Update progress if you have a progress bar
-            }
             .addOnSuccessListener { taskSnapshot ->
                 // Get download URL after successful upload
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->

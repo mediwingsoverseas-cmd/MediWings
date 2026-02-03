@@ -165,7 +165,7 @@
                         android:layout_marginTop="12dp"
                         android:text="Chat on WhatsApp: +91 8792207943"
                         android:textColor="@color/white"
-                        android:backgroundTint="#25D366"
+                        android:backgroundTint="@color/whatsapp_green"
                         app:icon="@drawable/ic_whatsapp"
                         app:iconTint="@color/white"
                         android:textAllCaps="false"/>
@@ -177,7 +177,7 @@
                         android:layout_marginTop="12dp"
                         android:text="Chat on WhatsApp: +91 9448234176"
                         android:textColor="@color/white"
-                        android:backgroundTint="#25D366"
+                        android:backgroundTint="@color/whatsapp_green"
                         app:icon="@drawable/ic_whatsapp"
                         app:iconTint="@color/white"
                         android:textAllCaps="false"/>

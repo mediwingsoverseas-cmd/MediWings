@@ -123,10 +123,6 @@ class AdminDashboardActivity : AppCompatActivity() {
             .child(filename)
 
         storageRef.putFile(fileUri)
-            .addOnProgressListener { taskSnapshot ->
-                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                // Update progress if needed
-            }
             .addOnSuccessListener { taskSnapshot ->
                 // Get download URL after successful upload
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
@@ -150,8 +146,8 @@ class AdminDashboardActivity : AppCompatActivity() {
         val tvTotalStudents = findViewById<TextView>(R.id.tvTotalStudents)
         val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
         
-        // Count total students
-        database.reference.child("users").addValueEventListener(object : ValueEventListener {
+        // Count total students (single read)
+        database.reference.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var studentCount = 0
                 for (userSnapshot in snapshot.children) {
@@ -165,8 +161,8 @@ class AdminDashboardActivity : AppCompatActivity() {
             override fun onCancelled(error: DatabaseError) {}
         })
         
-        // Count active chats
-        database.reference.child("Chats").addValueEventListener(object : ValueEventListener {
+        // Count active chats (single read)
+        database.reference.child("Chats").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val chatCount = snapshot.childrenCount.toInt()
                 tvActiveChats.text = chatCount.toString()
