@@ -343,6 +343,9 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             R.id.nav_chat -> startActivity(Intent(this, ChatActivity::class.java))
             R.id.nav_logout -> {
                 auth.signOut()
+                // Clear saved preferences
+                val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                sharedPref.edit().clear().apply()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             }

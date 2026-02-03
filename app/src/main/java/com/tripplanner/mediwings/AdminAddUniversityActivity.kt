@@ -1,10 +1,7 @@
 package com.tripplanner.mediwings
 
-import android.app.Activity
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -25,9 +22,9 @@ class AdminAddUniversityActivity : AppCompatActivity() {
     private val storage = FirebaseStorage.getInstance()
     private val database = FirebaseDatabase.getInstance()
 
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            imageUri = result.data?.data
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            imageUri = it
             ivPreview.setImageURI(imageUri)
         }
     }
@@ -41,8 +38,7 @@ class AdminAddUniversityActivity : AppCompatActivity() {
         ivPreview = findViewById(R.id.ivUniPhotoPreview)
 
         findViewById<Button>(R.id.btnPickUniPhoto).setOnClickListener {
-            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            pickImageLauncher.launch(intent)
+            pickImageLauncher.launch("image/*")
         }
 
         findViewById<Button>(R.id.btnSaveUniversity).setOnClickListener {

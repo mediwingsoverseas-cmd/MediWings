@@ -1,154 +1,334 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/accent_premium">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Admin Control Center"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:textColor="#333333"
-            android:layout_marginBottom="24dp"/>
-
+        <!-- Premium Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-            <Button
-                android:id="@+id/btnAdminStudents"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Students"
-                android:layout_marginEnd="8dp"/>
-            <Button
-                android:id="@+id/btnAdminMessages"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Messages"/>
-        </LinearLayout>
+            android:background="@color/primary_premium"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-            <Button
-                android:id="@+id/btnAddUniversity"
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Add University"
-                android:backgroundTint="#0066FF"
+                android:text="MediWings"
+                android:textColor="@color/gold_premium"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:fontFamily="cursive"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Admin Control Center"
                 android:textColor="@color/white"
-                android:layout_marginEnd="8dp"/>
-            <Button
-                android:id="@+id/btnEditContact"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Edit Contact"
-                android:backgroundTint="#0066FF"
-                android:textColor="@color/white"/>
+                android:textSize="16sp"
+                android:alpha="0.8"/>
         </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Banner Management"
-            android:textColor="#333333"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <Button
-                android:id="@+id/btnUploadBanner1"
-                android:layout_width="0dp"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Main Actions Section -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="B1"
-                android:layout_marginEnd="4dp"/>
-            <Button
-                android:id="@+id/btnUploadBanner2"
-                android:layout_width="0dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Main Actions"
+                        android:textColor="@color/primary_premium"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+                        
+                        <Button
+                            android:id="@+id/btnAdminStudents"
+                            android:layout_width="0dp"
+                            android:layout_height="60dp"
+                            android:layout_weight="1"
+                            android:text="STUDENTS"
+                            android:textStyle="bold"
+                            android:backgroundTint="@color/gold_premium"
+                            android:textColor="@color/primary_premium"
+                            android:layout_marginEnd="8dp"
+                            android:drawableTop="@android:drawable/ic_menu_myplaces"
+                            android:drawableTint="@color/primary_premium"
+                            android:drawablePadding="4dp"/>
+                        
+                        <Button
+                            android:id="@+id/btnAdminMessages"
+                            android:layout_width="0dp"
+                            android:layout_height="60dp"
+                            android:layout_weight="1"
+                            android:text="MESSAGES"
+                            android:textStyle="bold"
+                            android:backgroundTint="@color/gold_premium"
+                            android:textColor="@color/primary_premium"
+                            android:drawableTop="@android:drawable/ic_dialog_email"
+                            android:drawableTint="@color/primary_premium"
+                            android:drawablePadding="4dp"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Content Management Section -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="B2"
-                android:layout_marginEnd="4dp"/>
-            <Button
-                android:id="@+id/btnUploadBanner3"
-                android:layout_width="0dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Content Management"
+                        android:textColor="@color/primary_premium"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+                        
+                        <Button
+                            android:id="@+id/btnAddUniversity"
+                            android:layout_width="0dp"
+                            android:layout_height="60dp"
+                            android:layout_weight="1"
+                            android:text="ADD UNIVERSITY"
+                            android:textStyle="bold"
+                            android:backgroundTint="@color/secondary_premium"
+                            android:textColor="@color/white"
+                            android:layout_marginEnd="8dp"
+                            android:drawableTop="@android:drawable/ic_input_add"
+                            android:drawableTint="@color/white"
+                            android:drawablePadding="4dp"/>
+                        
+                        <Button
+                            android:id="@+id/btnEditContact"
+                            android:layout_width="0dp"
+                            android:layout_height="60dp"
+                            android:layout_weight="1"
+                            android:text="EDIT CONTACT"
+                            android:textStyle="bold"
+                            android:backgroundTint="@color/secondary_premium"
+                            android:textColor="@color/white"
+                            android:drawableTop="@android:drawable/ic_menu_edit"
+                            android:drawableTint="@color/white"
+                            android:drawablePadding="4dp"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Banner Management Section -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="B3"/>
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Banner Management"
+                        android:textColor="@color/primary_premium"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        
+                        <Button
+                            android:id="@+id/btnUploadBanner1"
+                            android:layout_width="0dp"
+                            android:layout_height="55dp"
+                            android:layout_weight="1"
+                            android:text="BANNER 1"
+                            android:textStyle="bold"
+                            android:textSize="12sp"
+                            android:backgroundTint="@color/gold_premium"
+                            android:textColor="@color/primary_premium"
+                            android:layout_marginEnd="4dp"/>
+                        
+                        <Button
+                            android:id="@+id/btnUploadBanner2"
+                            android:layout_width="0dp"
+                            android:layout_height="55dp"
+                            android:layout_weight="1"
+                            android:text="BANNER 2"
+                            android:textStyle="bold"
+                            android:textSize="12sp"
+                            android:backgroundTint="@color/gold_premium"
+                            android:textColor="@color/primary_premium"
+                            android:layout_marginEnd="4dp"/>
+                        
+                        <Button
+                            android:id="@+id/btnUploadBanner3"
+                            android:layout_width="0dp"
+                            android:layout_height="55dp"
+                            android:layout_weight="1"
+                            android:text="BANNER 3"
+                            android:textStyle="bold"
+                            android:textSize="12sp"
+                            android:backgroundTint="@color/gold_premium"
+                            android:textColor="@color/primary_premium"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Home Page Editor Section -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Home Page Content Editor"
+                        android:textColor="@color/primary_premium"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="(HTML Supported)"
+                        android:textColor="@color/gray"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="16dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp">
+                        
+                        <Button
+                            android:id="@+id/btnInsertImage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:text="IMG URL"
+                            android:textSize="11sp"
+                            android:backgroundTint="@color/secondary_premium"
+                            android:textColor="@color/white"
+                            android:layout_marginEnd="8dp"
+                            style="?android:attr/buttonBarButtonStyle"/>
+                        
+                        <Button
+                            android:id="@+id/btnInsertBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:text="&lt;b&gt;"
+                            android:textSize="11sp"
+                            android:backgroundTint="@color/secondary_premium"
+                            android:textColor="@color/white"
+                            style="?android:attr/buttonBarButtonStyle"/>
+                    </LinearLayout>
+
+                    <EditText
+                        android:id="@+id/etHomeContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="250dp"
+                        android:hint="Type HTML content here..."
+                        android:gravity="top"
+                        android:background="@android:drawable/editbox_background"
+                        android:padding="12dp"
+                        android:textColor="@color/primary_premium"
+                        android:inputType="textMultiLine"
+                        android:layout_marginBottom="16dp"/>
+
+                    <Button
+                        android:id="@+id/btnSaveCMS"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:text="SAVE HOME PAGE"
+                        android:backgroundTint="@color/gold_premium"
+                        android:textColor="@color/primary_premium"
+                        android:textStyle="bold"/>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Logout Button -->
+            <Button
+                android:id="@+id/btnAdminLogout"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="LOGOUT"
+                android:textStyle="bold"
+                android:backgroundTint="@color/red"
+                android:textColor="@color/white"
+                android:drawableStart="@android:drawable/ic_lock_power_off"
+                android:drawableTint="@color/white"
+                android:drawablePadding="8dp"/>
+
         </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Home Page Content Editor (HTML)"
-            android:textColor="#333333"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
-            <Button
-                android:id="@+id/btnInsertImage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Insert Image URL"
-                android:textSize="12sp"
-                style="?android:attr/buttonBarButtonStyle"/>
-            <Button
-                android:id="@+id/btnInsertBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="&lt;b&gt;"
-                android:textSize="12sp"
-                style="?android:attr/buttonBarButtonStyle"/>
-        </LinearLayout>
-
-        <EditText
-            android:id="@+id/etHomeContent"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:hint="Type HTML content here..."
-            android:gravity="top"
-            android:background="@android:drawable/editbox_background"
-            android:padding="12dp"
-            android:textColor="#333333"
-            android:inputType="textMultiLine"
-            android:layout_marginBottom="16dp"/>
-
-        <Button
-            android:id="@+id/btnSaveCMS"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="Save Home Page"
-            android:backgroundTint="#0066FF"
-            android:textColor="@color/white"
-            android:textStyle="bold"/>
 
     </LinearLayout>
 </ScrollView>
