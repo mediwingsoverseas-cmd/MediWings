@@ -1,16 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:padding="12dp"
+    android:gravity="center_vertical">
 
-    <View
-        android:id="@+id/view_indicator"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:background="@android:drawable/presence_invisible"
-        android:layout_marginTop="4dp"/>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cvIndicator"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/gray">
+            <ImageView
+                android:id="@+id/ivStepIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:tint="@color/white"
+                android:src="@android:drawable/btn_star_big_on"/>
+        </androidx.cardview.widget.CardView>
+
+        <View
+            android:id="@+id/view_line"
+            android:layout_width="2dp"
+            android:layout_height="40dp"
+            android:background="@color/gray"/>
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,23 +47,38 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Step Title"
-            android:textColor="#333333"
+            android:textColor="@color/primary_premium"
             android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="serif"/>
+
+        <TextView
+            android:id="@+id/tvStepStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pending"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
             android:textStyle="bold"/>
 
         <TextView
-            android:id="@+id/tvStepDescription"
+            android:id="@+id/tvStepDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Status description"
+            android:text=""
             android:textColor="#666666"
-            android:textSize="14sp"/>
+            android:textSize="12sp"
+            android:visibility="gone"/>
 
-        <View
-            android:layout_width="2dp"
-            android:layout_height="30dp"
-            android:background="#CCCCCC"
-            android:layout_marginStart="-27dp"
-            android:id="@+id/view_line"/>
+        <TextView
+            android:id="@+id/tvStepRemark"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="@color/red"
+            android:textSize="13sp"
+            android:visibility="gone"
+            android:layout_marginTop="2dp"
+            android:fontFamily="sans-serif-condensed"/>
     </LinearLayout>
 </LinearLayout>

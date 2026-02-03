@@ -1,33 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="180dp"
-    android:background="@color/gold_accent"
+    android:background="@color/primary_premium"
     android:gravity="bottom"
     android:orientation="vertical"
     android:padding="16dp"
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
-    <ImageView
+    <androidx.cardview.widget.CardView
         android:layout_width="72dp"
         android:layout_height="72dp"
-        android:src="@drawable/mediwings_logo" />
+        android:layout_marginBottom="12dp"
+        app:cardCornerRadius="36dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/transparent">
+        <ImageView
+            android:id="@+id/ivNavHeaderProfile"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/mediwings_logo"
+            android:scaleType="centerCrop"/>
+    </androidx.cardview.widget.CardView>
 
     <TextView
         android:id="@+id/tvNavHeaderName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp"
         android:text="User Name"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textColor="@color/dark_background"
-        android:textStyle="bold" />
+        android:textColor="@color/gold_premium"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:fontFamily="serif"/>
 
     <TextView
         android:id="@+id/tvNavHeaderEmail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="user@example.com"
-        android:textColor="@color/dark_background" />
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-light"/>
 
 </LinearLayout>

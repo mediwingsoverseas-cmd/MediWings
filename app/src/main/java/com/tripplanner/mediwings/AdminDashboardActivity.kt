@@ -1,83 +1,120 @@
 package com.tripplanner.mediwings
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 
 class AdminDashboardActivity : AppCompatActivity() {
 
-    private var currentBannerIndex: Int = 1
+    private var currentBannerId = 0
+    private lateinit var etHomeContent: EditText
     private val storage = FirebaseStorage.getInstance()
     private val database = FirebaseDatabase.getInstance()
 
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val imageUri: Uri? = result.data?.data
-            if (imageUri != null) {
-                uploadBanner(imageUri, currentBannerIndex)
-            }
-        }
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { uploadBannerToFirebase(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_dashboard)
 
-        findViewById<CardView>(R.id.btnAdminStudents).setOnClickListener {
+        etHomeContent = findViewById(R.id.etHomeContent)
+
+        findViewById<Button>(R.id.btnAdminStudents).setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
             intent.putExtra("MODE", "control")
             startActivity(intent)
         }
 
-        findViewById<CardView>(R.id.btnAdminMessages).setOnClickListener {
+        findViewById<Button>(R.id.btnAdminMessages).setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
             intent.putExtra("MODE", "chat")
             startActivity(intent)
         }
 
+        findViewById<Button>(R.id.btnAddUniversity).setOnClickListener {
+            startActivity(Intent(this, AdminAddUniversityActivity::class.java))
+        }
+
+        findViewById<Button>(R.id.btnEditContact).setOnClickListener {
+            startActivity(Intent(this, AdminEditContactActivity::class.java))
+        }
+
         findViewById<Button>(R.id.btnUploadBanner1).setOnClickListener {
-            currentBannerIndex = 1
-            openGallery()
+            currentBannerId = 1
+            pickImageLauncher.launch("image/*")
         }
 
         findViewById<Button>(R.id.btnUploadBanner2).setOnClickListener {
-            currentBannerIndex = 2
-            openGallery()
+            currentBannerId = 2
+            pickImageLauncher.launch("image/*")
         }
 
         findViewById<Button>(R.id.btnUploadBanner3).setOnClickListener {
-            currentBannerIndex = 3
-            openGallery()
+            currentBannerId = 3
+            pickImageLauncher.launch("image/*")
         }
-    }
 
-    private fun openGallery() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        pickImageLauncher.launch(intent)
-    }
+        findViewById<Button>(R.id.btnInsertBold).setOnClickListener {
+            val start = etHomeContent.selectionStart
+            val end = etHomeContent.selectionEnd
+            etHomeContent.text.insert(start, "<b>")
+            etHomeContent.text.insert(end + 3, "</b>")
+        }
 
-    private fun uploadBanner(uri: Uri, index: Int) {
-        val bannerRef = storage.reference.child("Banners/banner$index.jpg")
-        bannerRef.putFile(uri).addOnSuccessListener {
-            bannerRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                database.reference.child("Banners").child("banner$index").setValue(downloadUrl.toString())
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            Toast.makeText(this, "Banner $index uploaded successfully!", Toast.LENGTH_SHORT).show()
-                        }
+        findViewById<Button>(R.id.btnInsertImage).setOnClickListener {
+            val start = etHomeContent.selectionStart
+            etHomeContent.text.insert(start, "<img src=\"URL_HERE\" width=\"100%\">")
+        }
+
+        findViewById<Button>(R.id.btnSaveCMS).setOnClickListener {
+            val content = etHomeContent.text.toString()
+            if (content.isNotEmpty()) {
+                database.reference.child("CMS").child("home_content").setValue(content)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "Home Page Updated!", Toast.LENGTH_SHORT).show()
                     }
             }
-        }.addOnFailureListener {
-            Toast.makeText(this, "Upload failed: ${it.message}", Toast.LENGTH_SHORT).show()
         }
+
+        database.reference.child("CMS").child("home_content").get().addOnSuccessListener {
+            if (it.exists()) {
+                etHomeContent.setText(it.value.toString())
+            }
+        }
+    }
+
+    private fun uploadBannerToFirebase(fileUri: Uri) {
+        Toast.makeText(this, "Uploading Banner $currentBannerId...", Toast.LENGTH_SHORT).show()
+        val storageRef = storage.reference.child("banners/banner_$currentBannerId.jpg")
+
+        storageRef.putFile(fileUri).continueWithTask { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let { throw it }
+            }
+            storageRef.downloadUrl
+        }.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val downloadUri = task.result
+                saveBannerUrlToDatabase(downloadUri.toString())
+            } else {
+                Toast.makeText(this, "Upload Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun saveBannerUrlToDatabase(url: String) {
+        database.reference.child("Banners").child("banner$currentBannerId").setValue(url)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Banner $currentBannerId Saved!", Toast.LENGTH_SHORT).show()
+            }
     }
 }

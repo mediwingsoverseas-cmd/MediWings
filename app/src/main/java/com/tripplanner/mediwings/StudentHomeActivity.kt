@@ -4,14 +4,22 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebView
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
@@ -26,15 +34,14 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     private lateinit var database: DatabaseReference
     private lateinit var storage: FirebaseStorage
     
-    private var uploadType = "" // "passport" or "aadhar" or "profile"
+    private var uploadType = "" // "photos", "aadhar", "passport", "hiv", "profile"
 
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val fileUri: Uri? = result.data?.data
-            if (fileUri != null) {
-                uploadImage(fileUri, uploadType)
-            }
-        }
+    private lateinit var bannerScroll: HorizontalScrollView
+    private val scrollHandler = Handler(Looper.getMainLooper())
+    private val bannerWidth = 320 
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { uploadImage(it, uploadType) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +54,12 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false) // Remove "Student Dimension" title
+        supportActionBar?.setDisplayShowTitleEnabled(true)
+        supportActionBar?.title = "MediWings"
+        
+        val goldColor = ContextCompat.getColor(this, R.color.gold_premium)
+        toolbar.setTitleTextColor(goldColor)
+        toolbar.navigationIcon?.setTint(goldColor)
 
         drawerLayout = findViewById(R.id.drawer_layout)
         val navView = findViewById<NavigationView>(R.id.nav_view)
@@ -57,14 +69,54 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             this, drawerLayout, toolbar,
             R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
+        toggle.drawerArrowDrawable.color = goldColor
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
+        findViewById<HorizontalScrollView>(R.id.banner_scroll)?.let {
+            bannerScroll = it
+            startAutoScroll()
+        }
+
         setupBottomNav()
-        loadUserData()
+        loadUserData(navView)
         loadBanners()
         setupDocUploads()
         setupStatusTimeline()
+        loadCMSContent()
+        setupProfileUpdate()
+        loadUniversities()
+    }
+
+    private fun loadCMSContent() {
+        val webView = findViewById<WebView>(R.id.wvHomeContent)
+        database.child("CMS").child("home_content").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val content = snapshot.value.toString()
+                    val htmlData = "<html><body style='color:#333333;font-family:serif;line-height:1.6;background-color:transparent;'>$content</body></html>"
+                    webView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null)
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    private fun startAutoScroll() {
+        val runnable = object : Runnable {
+            override fun run() {
+                if (!::bannerScroll.isInitialized || bannerScroll.childCount == 0) return
+                val innerLayout = bannerScroll.getChildAt(0) as? LinearLayout ?: return
+                val maxScroll = innerLayout.width - bannerScroll.width
+                if (maxScroll <= 0) return
+                val step = (bannerWidth + 12) * resources.displayMetrics.density
+                var nextX = bannerScroll.scrollX + step.toInt()
+                if (nextX >= maxScroll - 10) nextX = 0
+                bannerScroll.smoothScrollTo(nextX, 0)
+                scrollHandler.postDelayed(this, 4000)
+            }
+        }
+        scrollHandler.postDelayed(runnable, 4000)
     }
 
     private fun setupBottomNav() {
@@ -73,38 +125,58 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val docsView = findViewById<View>(R.id.docs_view)
         val profileView = findViewById<View>(R.id.profile_view)
         val statusView = findViewById<View>(R.id.status_view)
+        val uniView = findViewById<View>(R.id.universities_view)
 
         bottomNav.setOnItemSelectedListener { item ->
             homeView.visibility = View.GONE
             docsView.visibility = View.GONE
             profileView.visibility = View.GONE
             statusView.visibility = View.GONE
+            uniView.visibility = View.GONE
 
             when (item.itemId) {
-                R.id.bottom_universities -> homeView.visibility = View.VISIBLE
-                R.id.bottom_status -> statusView.visibility = View.VISIBLE
-                R.id.bottom_docs -> docsView.visibility = View.VISIBLE
-                R.id.bottom_profile -> profileView.visibility = View.VISIBLE
+                R.id.nav_home_tab -> { homeView.visibility = View.VISIBLE; true }
+                R.id.nav_universities -> { uniView.visibility = View.VISIBLE; true }
+                R.id.bottom_profile -> { profileView.visibility = View.VISIBLE; true }
+                R.id.bottom_docs -> { docsView.visibility = View.VISIBLE; true }
+                R.id.bottom_status -> { statusView.visibility = View.VISIBLE; true }
+                else -> false
             }
-            true
         }
     }
 
-    private fun loadUserData() {
+    private fun loadUserData(navView: NavigationView) {
         val userId = auth.currentUser?.uid ?: return
         val tvName = findViewById<TextView>(R.id.tvProfileName)
-        val tvMobile = findViewById<TextView>(R.id.tvProfileMobile)
+        val etName = findViewById<EditText>(R.id.etProfileName)
+        val etMobile = findViewById<EditText>(R.id.etProfileMobile)
         val tvEmail = findViewById<TextView>(R.id.tvProfileEmail)
         val ivProfile = findViewById<ImageView>(R.id.ivProfilePic)
+        
+        val headerView = navView.getHeaderView(0)
+        val ivNavProfile = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
+        val tvNavName = headerView.findViewById<TextView>(R.id.tvNavHeaderName)
+        val tvNavEmail = headerView.findViewById<TextView>(R.id.tvNavHeaderEmail)
 
         database.child("users").child(userId).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    tvName.text = snapshot.child("name").value.toString()
-                    tvMobile.text = snapshot.child("mobile").value.toString()
-                    tvEmail.text = snapshot.child("email").value.toString()
+                    val name = snapshot.child("name").value?.toString() ?: ""
+                    val email = snapshot.child("email").value?.toString() ?: ""
+                    val mobile = snapshot.child("mobile").value?.toString() ?: ""
                     val pic = snapshot.child("profilePic").value?.toString()
-                    if (!pic.isNullOrEmpty()) Glide.with(this@StudentHomeActivity).load(pic).into(ivProfile)
+
+                    tvName.text = name
+                    if (!etName.hasFocus()) etName.setText(name)
+                    if (!etMobile.hasFocus()) etMobile.setText(mobile)
+                    tvEmail.text = email
+                    tvNavName.text = name
+                    tvNavEmail.text = email
+
+                    if (!pic.isNullOrEmpty()) {
+                        Glide.with(this@StudentHomeActivity).load(pic).circleCrop().into(ivProfile)
+                        Glide.with(this@StudentHomeActivity).load(pic).circleCrop().into(ivNavProfile)
+                    }
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -112,7 +184,24 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
         ivProfile.setOnClickListener {
             uploadType = "profile"
-            openGallery()
+            pickImageLauncher.launch("image/*")
+        }
+    }
+
+    private fun setupProfileUpdate() {
+        findViewById<Button>(R.id.btnUpdateProfile).setOnClickListener {
+            val userId = auth.currentUser?.uid ?: return@setOnClickListener
+            val name = findViewById<EditText>(R.id.etProfileName).text.toString().trim()
+            val mobile = findViewById<EditText>(R.id.etProfileMobile).text.toString().trim()
+            
+            if (name.isNotEmpty() && mobile.isNotEmpty()) {
+                val updates = mapOf("name" to name, "mobile" to mobile)
+                database.child("users").child(userId).updateChildren(updates).addOnSuccessListener {
+                    Toast.makeText(this, "Profile Updated!", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Please enter name and mobile", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -134,59 +223,119 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         })
     }
 
-    private fun setupDocUploads() {
-        findViewById<Button>(R.id.btnUploadPassport).setOnClickListener {
-            uploadType = "passport"
-            openGallery()
-        }
-        findViewById<Button>(R.id.btnUploadAadhar).setOnClickListener {
-            uploadType = "aadhar"
-            openGallery()
-        }
+    private fun loadUniversities() {
+        val rv = findViewById<RecyclerView>(R.id.rvUniversitiesHome)
+        rv.layoutManager = LinearLayoutManager(this)
+        val list = mutableListOf<UniversitiesListActivity.University>()
+        val adapter = UniversityHomeAdapter(list)
+        rv.adapter = adapter
+
+        database.child("Universities").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                list.clear()
+                for (data in snapshot.children) {
+                    val u = data.getValue(UniversitiesListActivity.University::class.java)
+                    if (u != null) list.add(u)
+                }
+                adapter.notifyDataSetChanged()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
     }
 
-    private fun openGallery() {
-        val intent = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        pickImageLauncher.launch(intent)
+    private fun setupDocUploads() {
+        findViewById<Button>(R.id.btnUploadPhotos).setOnClickListener { uploadType = "photos"; pickImageLauncher.launch("image/*") }
+        findViewById<Button>(R.id.btnUploadAadhar).setOnClickListener { uploadType = "aadhar"; pickImageLauncher.launch("image/*") }
+        findViewById<Button>(R.id.btnUploadPassport).setOnClickListener { uploadType = "passport"; pickImageLauncher.launch("image/*") }
+        findViewById<Button>(R.id.btnUploadHIV).setOnClickListener { uploadType = "hiv"; pickImageLauncher.launch("image/*") }
     }
 
     private fun uploadImage(uri: Uri, type: String) {
         val userId = auth.currentUser?.uid ?: return
+        Toast.makeText(this, "Uploading $type...", Toast.LENGTH_SHORT).show()
         val ref = storage.reference.child("uploads/$userId/$type.jpg")
-        ref.putFile(uri).addOnSuccessListener {
-            ref.downloadUrl.addOnSuccessListener { downloadUrl ->
+        
+        ref.putFile(uri).continueWithTask { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let { throw it }
+            }
+            ref.downloadUrl
+        }.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val downloadUrl = task.result.toString()
                 if (type == "profile") {
-                    database.child("users").child(userId).child("profilePic").setValue(downloadUrl.toString())
+                    database.child("users").child(userId).child("profilePic").setValue(downloadUrl)
                 } else {
-                    database.child("users").child(userId).child("docs").child(type).setValue(downloadUrl.toString())
+                    database.child("users").child(userId).child("docs").child(type).setValue(downloadUrl)
                 }
                 Toast.makeText(this, "Upload Successful!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Upload Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
 
     private fun setupStatusTimeline() {
         val userId = auth.currentUser?.uid ?: return
-        database.child("users").child(userId).child("status").addValueEventListener(object : ValueEventListener {
+        val llVisaSub = findViewById<LinearLayout>(R.id.llVisaSubDivision)
+        
+        database.child("users").child(userId).child("tracking").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                updateStep(findViewById(R.id.step_application), "Application", snapshot.child("application").value == true)
-                updateStep(findViewById(R.id.step_documents), "Documents", snapshot.child("documents").value == true)
-                updateStep(findViewById(R.id.step_verification), "Verification", snapshot.child("verification").value == true)
+                updateTimelineStep(findViewById(R.id.step_application), "Application", snapshot.child("step1"))
+                updateTimelineStep(findViewById(R.id.step_documents), "Documents", snapshot.child("step2"))
+                updateTimelineStep(findViewById(R.id.step_verification), "Verification", snapshot.child("step3"))
                 
-                val visaStatus = snapshot.child("visa").value?.toString() ?: "Not Applied"
-                updateStep(findViewById(R.id.step_visa), "Visa", visaStatus == "Approved", visaStatus)
+                val visaData = snapshot.child("step4")
+                updateTimelineStep(findViewById(R.id.step_visa), "Visa", visaData)
                 
-                updateStep(findViewById(R.id.step_flight), "Flight Schedule", snapshot.child("flight").value == true)
+                // Sub-tracking for Visa
+                updateTimelineStep(findViewById(R.id.visa_step_applied), "Visa Applied", visaData.child("applied"))
+                updateTimelineStep(findViewById(R.id.visa_step_processing), "Processing", visaData.child("processing"))
+                updateTimelineStep(findViewById(R.id.visa_step_approved), "Approved", visaData.child("approved"))
+
+                findViewById<View>(R.id.step_visa).setOnClickListener {
+                    llVisaSub.visibility = if (llVisaSub.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                }
+
+                updateTimelineStep(findViewById(R.id.step_flight), "Flight Scheduled", snapshot.child("step5"))
             }
             override fun onCancelled(error: DatabaseError) {}
         })
     }
 
-    private fun updateStep(view: View, title: String, isDone: Boolean, desc: String? = null) {
+    private fun updateTimelineStep(view: View, title: String, data: DataSnapshot) {
+        val isDone = data.child("status").value == true
+        val date = data.child("date").value?.toString() ?: ""
+        val remark = data.child("remark").value?.toString() ?: ""
+
         view.findViewById<TextView>(R.id.tvStepTitle).text = title
-        view.findViewById<TextView>(R.id.tvStepDescription).text = desc ?: if (isDone) "Completed" else "In Progress"
-        val indicator = view.findViewById<View>(R.id.view_indicator)
-        indicator.setBackgroundColor(if (isDone) android.graphics.Color.GREEN else android.graphics.Color.GRAY)
+        val tvStatus = view.findViewById<TextView>(R.id.tvStepStatus)
+        val tvDate = view.findViewById<TextView>(R.id.tvStepDate)
+        val tvRemark = view.findViewById<TextView>(R.id.tvStepRemark)
+        val indicator = view.findViewById<View>(R.id.cvIndicator)
+        val line = view.findViewById<View>(R.id.view_line)
+
+        if (isDone) {
+            tvStatus.text = "Completed"
+            tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50"))
+            indicator.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
+            line.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
+            tvDate.visibility = View.VISIBLE
+            tvDate.text = "Completed on $date"
+            tvRemark.visibility = View.GONE
+        } else {
+            tvStatus.text = "Pending"
+            tvStatus.setTextColor(android.graphics.Color.GRAY)
+            indicator.setBackgroundColor(android.graphics.Color.parseColor("#EEEEEE"))
+            line.setBackgroundColor(android.graphics.Color.parseColor("#EEEEEE"))
+            tvDate.visibility = View.GONE
+            if (remark.isNotEmpty()) {
+                tvRemark.visibility = View.VISIBLE
+                tvRemark.text = "Remark: $remark"
+            } else {
+                tvRemark.visibility = View.GONE
+            }
+        }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -204,5 +353,37 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         }
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
+    }
+
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scrollHandler.removeCallbacksAndMessages(null)
+    }
+
+    private class UniversityHomeAdapter(private val list: List<UniversitiesListActivity.University>) : RecyclerView.Adapter<UniversityHomeAdapter.ViewHolder>() {
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val ivPhoto: ImageView = view.findViewById(R.id.ivUniItemPhoto)
+            val tvName: TextView = view.findViewById(R.id.tvUniItemName)
+            val tvDetails: TextView = view.findViewById(R.id.tvUniItemDetails)
+        }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_university, parent, false)
+            return ViewHolder(view)
+        }
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val uni = list[position]
+            holder.tvName.text = uni.name
+            holder.tvDetails.text = uni.details
+            if (uni.imageUrl.isNotEmpty()) Glide.with(holder.itemView.context).load(uni.imageUrl).into(holder.ivPhoto)
+        }
+        override fun getItemCount() = list.size
     }
 }

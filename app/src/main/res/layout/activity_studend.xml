@@ -10,7 +10,8 @@
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/primary_premium">
 
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
@@ -21,7 +22,9 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="@color/gold_accent"
+                android:background="@color/primary_premium"
+                app:title="MediWings"
+                app:titleTextColor="@color/gold_premium"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
         </com.google.android.material.appbar.AppBarLayout>
@@ -30,7 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            android:background="@color/white">
+            android:background="@color/accent_premium">
 
             <!-- Background Watermark Logo -->
             <ImageView
@@ -38,7 +41,7 @@
                 android:layout_width="300dp"
                 android:layout_height="300dp"
                 android:layout_centerInParent="true"
-                android:alpha="0.1"
+                android:alpha="0.05"
                 android:background="@android:color/transparent"
                 android:src="@drawable/mediwings_logo"
                 android:contentDescription="Background Logo" />
@@ -49,79 +52,96 @@
                 android:layout_height="match_parent"
                 android:layout_above="@+id/bottom_navigation">
 
-                <!-- Default Home View (Banners) -->
-                <LinearLayout
+                <!-- 1. Home View -->
+                <androidx.core.widget.NestedScrollView
                     android:id="@+id/home_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="vertical">
+                    android:visibility="visible">
 
-                    <HorizontalScrollView
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="220dp"
-                        android:padding="16dp"
-                        android:scrollbars="none">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:orientation="horizontal">
-
-                            <androidx.cardview.widget.CardView
-                                android:layout_width="300dp"
-                                android:layout_height="match_parent"
-                                android:layout_marginEnd="16dp"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="4dp">
-                                <ImageView
-                                    android:id="@+id/ivBanner1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:scaleType="centerCrop"
-                                    android:contentDescription="Banner 1" />
-                            </androidx.cardview.widget.CardView>
-
-                            <androidx.cardview.widget.CardView
-                                android:layout_width="300dp"
-                                android:layout_height="match_parent"
-                                android:layout_marginEnd="16dp"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="4dp">
-                                <ImageView
-                                    android:id="@+id/ivBanner2"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:scaleType="centerCrop"
-                                    android:contentDescription="Banner 2" />
-                            </androidx.cardview.widget.CardView>
-
-                            <androidx.cardview.widget.CardView
-                                android:layout_width="300dp"
-                                android:layout_height="match_parent"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="4dp">
-                                <ImageView
-                                    android:id="@+id/ivBanner3"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:scaleType="centerCrop"
-                                    android:contentDescription="Banner 3" />
-                            </androidx.cardview.widget.CardView>
-
-                        </LinearLayout>
-                    </HorizontalScrollView>
-
-                    <TextView
-                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Welcome to MediWings"
-                        android:textColor="#333333"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:layout_margin="16dp" />
+                        android:orientation="vertical">
+
+                        <HorizontalScrollView
+                            android:id="@+id/banner_scroll"
+                            android:layout_width="match_parent"
+                            android:layout_height="220dp"
+                            android:padding="12dp"
+                            android:scrollbars="none">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:orientation="horizontal">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="320dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginEnd="12dp"
+                                    app:cardCornerRadius="16dp"
+                                    app:cardElevation="6dp">
+                                    <ImageView
+                                        android:id="@+id/ivBanner1"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:scaleType="centerCrop" />
+                                </androidx.cardview.widget.CardView>
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="320dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginEnd="12dp"
+                                    app:cardCornerRadius="16dp"
+                                    app:cardElevation="6dp">
+                                    <ImageView
+                                        android:id="@+id/ivBanner2"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:scaleType="centerCrop" />
+                                </androidx.cardview.widget.CardView>
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="320dp"
+                                    android:layout_height="match_parent"
+                                    app:cardCornerRadius="16dp"
+                                    app:cardElevation="6dp">
+                                    <ImageView
+                                        android:id="@+id/ivBanner3"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:scaleType="centerCrop" />
+                                </androidx.cardview.widget.CardView>
+
+                            </LinearLayout>
+                        </HorizontalScrollView>
+
+                        <android.webkit.WebView
+                            android:id="@+id/wvHomeContent"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="16dp"
+                            android:background="@android:color/transparent" />
+
+                    </LinearLayout>
+                </androidx.core.widget.NestedScrollView>
+
+                <!-- 2. Universities View -->
+                <LinearLayout
+                    android:id="@+id/universities_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone"
+                    android:orientation="vertical">
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvUniversitiesHome"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="8dp"/>
                 </LinearLayout>
 
-                <!-- Documents View -->
+                <!-- 3. Documents View -->
                 <ScrollView
                     android:id="@+id/docs_view"
                     android:layout_width="match_parent"
@@ -133,123 +153,323 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Passport"
-                            android:textColor="#333333"
-                            android:textSize="18sp"
-                            android:textStyle="bold"/>
-                        <ImageView
-                            android:id="@+id/ivPassportPreview"
-                            android:layout_width="match_parent"
-                            android:layout_height="200dp"
-                            android:layout_marginTop="8dp"
-                            android:background="#EEEEEE"
-                            android:scaleType="centerInside"
-                            android:src="@android:drawable/ic_menu_camera"/>
-                        <Button
-                            android:id="@+id/btnUploadPassport"
+                        <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Upload Passport"
-                            android:layout_marginTop="8dp"/>
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Photos"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivPhotosPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"/>
+                                <Button
+                                    android:id="@+id/btnUploadPhotos"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload Photo"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Aadhar Card"
-                            android:textColor="#333333"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="24dp"/>
-                        <ImageView
-                            android:id="@+id/ivAadharPreview"
-                            android:layout_width="match_parent"
-                            android:layout_height="200dp"
-                            android:layout_marginTop="8dp"
-                            android:background="#EEEEEE"
-                            android:scaleType="centerInside"
-                            android:src="@android:drawable/ic_menu_camera"/>
-                        <Button
-                            android:id="@+id/btnUploadAadhar"
+                        <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Upload Aadhar"
-                            android:layout_marginTop="8dp"/>
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Aadhar Card"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivAadharPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"/>
+                                <Button
+                                    android:id="@+id/btnUploadAadhar"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload Aadhar"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Passport"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivPassportPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"/>
+                                <Button
+                                    android:id="@+id/btnUploadPassport"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload Passport"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="HIV Report"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivHIVPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"/>
+                                <Button
+                                    android:id="@+id/btnUploadHIV"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload HIV Report"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
                     </LinearLayout>
                 </ScrollView>
 
-                <!-- Profile View -->
-                <LinearLayout
+                <!-- 4. Profile View -->
+                <ScrollView
                     android:id="@+id/profile_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:visibility="gone"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:padding="24dp">
+                    android:visibility="gone">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:padding="24dp">
 
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="150dp"
-                        android:layout_height="150dp"
-                        app:cardCornerRadius="75dp"
-                        app:cardElevation="8dp">
-                        <ImageView
-                            android:id="@+id/ivProfilePic"
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="140dp"
+                            android:layout_height="140dp"
+                            app:cardCornerRadius="70dp"
+                            app:cardElevation="10dp"
+                            app:cardBackgroundColor="@color/white">
+                            <ImageView
+                                android:id="@+id/ivProfilePic"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@android:drawable/ic_menu_gallery"/>
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:id="@+id/tvProfileName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="User Name"
+                            android:textColor="@color/primary_premium"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="20dp"
+                            android:fontFamily="serif"/>
+
+                        <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop"
-                            android:src="@android:drawable/ic_menu_gallery"/>
-                    </androidx.cardview.widget.CardView>
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="30dp"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="4dp"
+                            app:cardBackgroundColor="@color/white">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
 
-                    <TextView
-                        android:id="@+id/tvProfileName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Name"
-                        android:textColor="#333333"
-                        android:textSize="24sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="24dp"/>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Profile Details"
+                                    android:textColor="@color/gold_premium"
+                                    android:textStyle="bold"
+                                    android:textSize="14sp"
+                                    android:textAllCaps="true"/>
 
-                    <TextView
-                        android:id="@+id/tvProfileMobile"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Mobile Number"
-                        android:textColor="#333333"
-                        android:textSize="18sp"
-                        android:layout_marginTop="8dp"/>
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="1dp"
+                                    android:background="#EEEEEE"
+                                    android:layout_marginVertical="12dp"/>
 
-                    <TextView
-                        android:id="@+id/tvProfileEmail"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Email Address"
-                        android:textColor="#333333"
-                        android:textSize="18sp"
-                        android:layout_marginTop="8dp"/>
-                </LinearLayout>
+                                <EditText
+                                    android:id="@+id/etProfileName"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Full Name"
+                                    android:inputType="textPersonName"
+                                    android:textColor="@color/primary_premium"
+                                    android:background="@android:color/transparent"
+                                    android:padding="8dp"
+                                    android:drawableStart="@android:drawable/ic_menu_edit"
+                                    android:drawablePadding="12dp"/>
 
-                <!-- Status View (Timeline) -->
+                                <EditText
+                                    android:id="@+id/etProfileMobile"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Mobile Number"
+                                    android:inputType="phone"
+                                    android:textColor="@color/primary_premium"
+                                    android:background="@android:color/transparent"
+                                    android:padding="8dp"
+                                    android:layout_marginTop="12dp"
+                                    android:drawableStart="@android:drawable/ic_menu_call"
+                                    android:drawablePadding="12dp"/>
+
+                                <TextView
+                                    android:id="@+id/tvProfileEmail"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="email@example.com"
+                                    android:textColor="@color/gray"
+                                    android:textSize="16sp"
+                                    android:layout_marginTop="12dp"
+                                    android:padding="8dp"
+                                    android:drawableStart="@android:drawable/ic_dialog_email"
+                                    android:drawablePadding="12dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <Button
+                            android:id="@+id/btnUpdateProfile"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:text="Save Changes"
+                            android:backgroundTint="@color/primary_premium"
+                            android:textColor="@color/white"
+                            app:cornerRadius="12dp"/>
+
+                    </LinearLayout>
+                </ScrollView>
+
+                <!-- 5. Status View (VERTICAL PREMIUM) -->
                 <ScrollView
                     android:id="@+id/status_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:visibility="gone"
-                    android:padding="16dp">
+                    android:visibility="gone">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                        <!-- Timeline items will be added here -->
-                        <include layout="@layout/layout_timeline_item" android:id="@+id/step_application" />
-                        <include layout="@layout/layout_timeline_item" android:id="@+id/step_documents" />
-                        <include layout="@layout/layout_timeline_item" android:id="@+id/step_verification" />
-                        <include layout="@layout/layout_timeline_item" android:id="@+id/step_visa" />
-                        <include layout="@layout/layout_timeline_item" android:id="@+id/step_flight" />
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="4dp"
+                            app:cardBackgroundColor="@color/white">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+
+                                <include layout="@layout/layout_timeline_item" android:id="@+id/step_application" />
+                                <include layout="@layout/layout_timeline_item" android:id="@+id/step_documents" />
+                                <include layout="@layout/layout_timeline_item" android:id="@+id/step_verification" />
+
+                                <!-- Visa Section -->
+                                <include layout="@layout/layout_timeline_item" android:id="@+id/step_visa" />
+
+                                <LinearLayout
+                                    android:id="@+id/llVisaSubDivision"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:paddingStart="40dp"
+                                    android:visibility="gone"
+                                    android:layout_marginBottom="16dp">
+
+                                    <include layout="@layout/layout_timeline_item" android:id="@+id/visa_step_applied" />
+                                    <include layout="@layout/layout_timeline_item" android:id="@+id/visa_step_processing" />
+                                    <include layout="@layout/layout_timeline_item" android:id="@+id/visa_step_approved" />
+
+                                </LinearLayout>
+
+                                <include layout="@layout/layout_timeline_item" android:id="@+id/step_flight" />
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
 
                     </LinearLayout>
                 </ScrollView>
@@ -259,11 +479,12 @@
             <com.google.android.material.bottomnavigation.BottomNavigationView
                 android:id="@+id/bottom_navigation"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="70dp"
                 android:layout_alignParentBottom="true"
                 android:background="@color/white"
-                app:itemTextColor="#333333"
-                app:itemIconTint="#333333"
+                app:itemTextColor="@color/primary_premium"
+                app:itemIconTint="@color/primary_premium"
+                app:labelVisibilityMode="labeled"
                 app:menu="@menu/bottom_nav_menu" />
 
         </RelativeLayout>
@@ -276,9 +497,10 @@
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header"
         app:menu="@menu/drawer_menu"
         android:background="@color/white"
-        app:itemTextColor="#333333"
-        app:itemIconTint="#333333" />
+        app:itemTextColor="@color/primary_premium"
+        app:itemIconTint="@color/gold_premium" />
 
 </androidx.drawerlayout.widget.DrawerLayout>
