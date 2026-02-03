@@ -16,6 +16,13 @@ class StudentControlActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_student_control)
 
+        // Add toolbar with back button
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Student Control"
+        toolbar.setNavigationOnClickListener { finish() }
+
         userId = intent.getStringExtra("USER_ID") ?: return
         database = FirebaseDatabase.getInstance().reference.child("users").child(userId!!)
 

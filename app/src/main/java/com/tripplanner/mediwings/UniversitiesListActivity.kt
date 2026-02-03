@@ -23,7 +23,9 @@ class UniversitiesListActivity : AppCompatActivity() {
 
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Top Universities"
+        toolbar.setNavigationOnClickListener { finish() }
 
         rvUniversities = findViewById(R.id.rvUniversities)
         rvUniversities.layoutManager = LinearLayoutManager(this)

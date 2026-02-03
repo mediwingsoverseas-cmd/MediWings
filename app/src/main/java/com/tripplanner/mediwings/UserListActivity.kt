@@ -31,7 +31,9 @@ class UserListActivity : AppCompatActivity() {
         mode = intent.getStringExtra("MODE")
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = if (mode == "chat") "Select User to Chat" else "Select Student"
+        toolbar.setNavigationOnClickListener { finish() }
 
         rvUserList = findViewById(R.id.rvUserList)
         rvUserList.layoutManager = LinearLayoutManager(this)

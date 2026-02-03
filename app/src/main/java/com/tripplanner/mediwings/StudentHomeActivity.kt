@@ -252,27 +252,38 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     private fun uploadImage(uri: Uri, type: String) {
         val userId = auth.currentUser?.uid ?: return
-        Toast.makeText(this, "Uploading $type...", Toast.LENGTH_SHORT).show()
-        val ref = storage.reference.child("uploads/$userId/$type.jpg")
         
-        ref.putFile(uri).continueWithTask { task ->
-            if (!task.isSuccessful) {
-                task.exception?.let { throw it }
-            }
-            ref.downloadUrl
-        }.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val downloadUrl = task.result.toString()
-                if (type == "profile") {
-                    database.child("users").child(userId).child("profilePic").setValue(downloadUrl)
-                } else {
-                    database.child("users").child(userId).child("docs").child(type).setValue(downloadUrl)
+        // Create unique filename with timestamp
+        val timestamp = System.currentTimeMillis()
+        val filename = "${type}_${timestamp}.jpg"
+        
+        // Use correct storage path - DON'T use .child() with empty or null values
+        val storageRef = storage.reference
+            .child("users")
+            .child(userId)
+            .child("documents")
+            .child(filename)
+        
+        // Show loading
+        Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show()
+        
+        // Upload with proper error handling
+        storageRef.putFile(uri)
+            .addOnSuccessListener { taskSnapshot ->
+                // Get download URL after successful upload
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    // Save URL to database
+                    if (type == "profile") {
+                        database.child("users").child(userId).child("profilePic").setValue(downloadUri.toString())
+                    } else {
+                        database.child("users").child(userId).child("docs").child(type).setValue(downloadUri.toString())
+                    }
+                    Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(this, "Upload Successful!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Upload Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
             }
-        }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
     }
 
     private fun setupStatusTimeline() {
@@ -316,6 +327,18 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val indicator = view.findViewById<View>(R.id.cvIndicator)
         val line = view.findViewById<View>(R.id.view_line)
         val ivStepImage = view.findViewById<ImageView>(R.id.ivStepImage)
+        val ivStepIcon = view.findViewById<ImageView>(R.id.ivStepIcon)
+        
+        // Set icon based on step title
+        val iconRes = when {
+            title.contains("Application", ignoreCase = true) || title.contains("Documents", ignoreCase = true) -> R.drawable.ic_document
+            title.contains("Verification", ignoreCase = true) || title.contains("Approved", ignoreCase = true) -> R.drawable.ic_verified
+            title.contains("Visa", ignoreCase = true) -> R.drawable.ic_visa
+            title.contains("Flight", ignoreCase = true) -> R.drawable.ic_flight
+            isDone -> R.drawable.ic_graduate
+            else -> R.drawable.ic_document
+        }
+        ivStepIcon.setImageResource(iconRes)
 
         if (isDone) {
             tvStatus.text = "Completed"

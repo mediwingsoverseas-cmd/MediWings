@@ -33,6 +33,13 @@ class AdminAddUniversityActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_add_university)
 
+        // Add toolbar with back button
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Add University"
+        toolbar.setNavigationOnClickListener { finish() }
+
         etName = findViewById(R.id.etUniName)
         etDetails = findViewById(R.id.etUniDetails)
         ivPreview = findViewById(R.id.ivUniPhotoPreview)
@@ -55,26 +62,39 @@ class AdminAddUniversityActivity : AppCompatActivity() {
             return
         }
 
-        val fileName = UUID.randomUUID().toString()
-        val ref = storage.reference.child("universities/$fileName.jpg")
+        // Create unique filename with timestamp
+        val timestamp = System.currentTimeMillis()
+        val fileName = "university_${timestamp}.jpg"
+        
+        // Use correct storage path
+        val storageRef = storage.reference
+            .child("universities")
+            .child(fileName)
 
-        ref.putFile(imageUri!!).addOnSuccessListener {
-            ref.downloadUrl.addOnSuccessListener { downloadUrl ->
-                val uniId = database.reference.child("Universities").push().key ?: return@addOnSuccessListener
-                val uniData = mapOf(
-                    "id" to uniId,
-                    "name" to name,
-                    "details" to details,
-                    "imageUrl" to downloadUrl.toString()
-                )
-                database.reference.child("Universities").child(uniId).setValue(uniData)
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "University Added!", Toast.LENGTH_SHORT).show()
-                        finish()
-                    }
+        Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show()
+        
+        storageRef.putFile(imageUri!!)
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                    val uniId = database.reference.child("Universities").push().key ?: return@addOnSuccessListener
+                    val uniData = mapOf(
+                        "id" to uniId,
+                        "name" to name,
+                        "details" to details,
+                        "imageUrl" to downloadUrl.toString()
+                    )
+                    database.reference.child("Universities").child(uniId).setValue(uniData)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "University Added!", Toast.LENGTH_SHORT).show()
+                            finish()
+                        }
+                        .addOnFailureListener { exception ->
+                            Toast.makeText(this, "Failed to save: ${exception.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
             }
-        }.addOnFailureListener {
-            Toast.makeText(this, "Failed to upload image", Toast.LENGTH_SHORT).show()
-        }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
     }
 }
