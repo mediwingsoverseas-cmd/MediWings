@@ -8,6 +8,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 
@@ -17,6 +18,7 @@ class AdminDashboardActivity : AppCompatActivity() {
     private lateinit var etHomeContent: EditText
     private val storage = FirebaseStorage.getInstance()
     private val database = FirebaseDatabase.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { uploadBannerToFirebase(it) }
@@ -89,6 +91,15 @@ class AdminDashboardActivity : AppCompatActivity() {
             if (it.exists()) {
                 etHomeContent.setText(it.value.toString())
             }
+        }
+        
+        findViewById<Button>(R.id.btnAdminLogout).setOnClickListener {
+            auth.signOut()
+            // Clear saved preferences
+            val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+            sharedPref.edit().clear().apply()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
     }
 

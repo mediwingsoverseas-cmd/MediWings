@@ -1,7 +1,10 @@
 package com.tripplanner.mediwings
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.*
 
@@ -28,13 +31,62 @@ class ContactActivity : AppCompatActivity() {
         database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    tvOfficialEmail.text = snapshot.child("officialEmail").value?.toString() ?: "mediwingsoverseas@gmail.com"
-                    tvJaveedEmail.text = snapshot.child("javeedEmail").value?.toString() ?: "javeedzoj@gmail.com"
-                    tvPhone1.text = snapshot.child("phone1").value?.toString() ?: "+91 8792207943"
-                    tvPhone2.text = snapshot.child("phone2").value?.toString() ?: "+91 9448234176"
+                    val officialEmail = snapshot.child("officialEmail").value?.toString() ?: "mediwingsoverseas@gmail.com"
+                    val javeedEmail = snapshot.child("javeedEmail").value?.toString() ?: "javeedzoj@gmail.com"
+                    val phone1 = snapshot.child("phone1").value?.toString() ?: "+91 8792207943"
+                    val phone2 = snapshot.child("phone2").value?.toString() ?: "+91 9448234176"
+                    
+                    tvOfficialEmail.text = officialEmail
+                    tvJaveedEmail.text = javeedEmail
+                    tvPhone1.text = phone1
+                    tvPhone2.text = phone2
+                    
+                    // Make emails clickable
+                    tvOfficialEmail.setOnClickListener {
+                        openEmail(officialEmail)
+                    }
+                    
+                    tvJaveedEmail.setOnClickListener {
+                        openEmail(javeedEmail)
+                    }
+                    
+                    // Make phone numbers clickable
+                    tvPhone1.setOnClickListener {
+                        openDialer(phone1)
+                    }
+                    
+                    tvPhone2.setOnClickListener {
+                        openDialer(phone2)
+                    }
+                } else {
+                    Toast.makeText(this@ContactActivity, "Failed to load contact information", Toast.LENGTH_SHORT).show()
                 }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@ContactActivity, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
         })
+    }
+    
+    private fun openEmail(email: String) {
+        val intent = Intent(Intent.ACTION_SENDTO).apply {
+            data = Uri.parse("mailto:$email")
+        }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "No email app found", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun openDialer(phone: String) {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:$phone")
+        }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "No dialer app found", Toast.LENGTH_SHORT).show()
+        }
     }
 }

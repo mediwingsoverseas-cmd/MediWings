@@ -307,6 +307,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val isDone = data.child("status").value == true
         val date = data.child("date").value?.toString() ?: ""
         val remark = data.child("remark").value?.toString() ?: ""
+        val imageUrl = data.child("image").value?.toString() ?: ""
 
         view.findViewById<TextView>(R.id.tvStepTitle).text = title
         val tvStatus = view.findViewById<TextView>(R.id.tvStepStatus)
@@ -314,6 +315,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val tvRemark = view.findViewById<TextView>(R.id.tvStepRemark)
         val indicator = view.findViewById<View>(R.id.cvIndicator)
         val line = view.findViewById<View>(R.id.view_line)
+        val ivStepImage = view.findViewById<ImageView>(R.id.ivStepImage)
 
         if (isDone) {
             tvStatus.text = "Completed"
@@ -336,6 +338,14 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                 tvRemark.visibility = View.GONE
             }
         }
+        
+        // Load status image if available
+        if (imageUrl.isNotEmpty()) {
+            ivStepImage.visibility = View.VISIBLE
+            Glide.with(this).load(imageUrl).centerCrop().into(ivStepImage)
+        } else {
+            ivStepImage.visibility = View.GONE
+        }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -343,6 +353,9 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             R.id.nav_chat -> startActivity(Intent(this, ChatActivity::class.java))
             R.id.nav_logout -> {
                 auth.signOut()
+                // Clear saved preferences
+                val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                sharedPref.edit().clear().apply()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             }
