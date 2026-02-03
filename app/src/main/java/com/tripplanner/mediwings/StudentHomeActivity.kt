@@ -253,36 +253,49 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     private fun uploadImage(uri: Uri, type: String) {
         val userId = auth.currentUser?.uid ?: return
         
-        // Create unique filename with timestamp
+        // Show uploading toast
+        Toast.makeText(this, "Uploading $type...", Toast.LENGTH_SHORT).show()
+        
+        // Create unique filename with timestamp to avoid conflicts
         val timestamp = System.currentTimeMillis()
         val filename = "${type}_${timestamp}.jpg"
         
-        // Use correct storage path - DON'T use .child() with empty or null values
+        // Create the storage reference - this creates the path if it doesn't exist
         val storageRef = storage.reference
-            .child("users")
+            .child("uploads")
             .child(userId)
-            .child("documents")
             .child(filename)
         
-        // Show loading
-        Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show()
-        
-        // Upload with proper error handling
+        // Upload the file
         storageRef.putFile(uri)
             .addOnSuccessListener { taskSnapshot ->
                 // Get download URL after successful upload
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    // Save URL to database
+                    // Save URL to database based on type
                     if (type == "profile") {
-                        database.child("users").child(userId).child("profilePic").setValue(downloadUri.toString())
+                        database.child("users").child(userId).child("profilePic")
+                            .setValue(downloadUri.toString())
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "Profile picture updated!", Toast.LENGTH_SHORT).show()
+                                // Reload the image
+                                val ivProfile = findViewById<ImageView>(R.id.ivProfilePic)
+                                Glide.with(this).load(downloadUri).circleCrop().into(ivProfile)
+                            }
                     } else {
-                        database.child("users").child(userId).child("docs").child(type).setValue(downloadUri.toString())
+                        database.child("users").child(userId).child("documents").child(type)
+                            .setValue(downloadUri.toString())
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "$type uploaded successfully!", Toast.LENGTH_SHORT).show()
+                            }
                     }
-                    Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show()
                 }
             }
             .addOnFailureListener { exception ->
                 Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
+            .addOnProgressListener { taskSnapshot ->
+                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                // Could update a progress bar here if needed
             }
     }
 
@@ -374,6 +387,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_chat -> startActivity(Intent(this, ChatActivity::class.java))
+            R.id.nav_contact -> startActivity(Intent(this, ContactActivity::class.java))
             R.id.nav_logout -> {
                 auth.signOut()
                 // Clear saved preferences
