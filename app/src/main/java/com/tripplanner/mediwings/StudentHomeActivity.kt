@@ -252,27 +252,42 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     private fun uploadImage(uri: Uri, type: String) {
         val userId = auth.currentUser?.uid ?: return
-        Toast.makeText(this, "Uploading $type...", Toast.LENGTH_SHORT).show()
-        val ref = storage.reference.child("uploads/$userId/$type.jpg")
         
-        ref.putFile(uri).continueWithTask { task ->
-            if (!task.isSuccessful) {
-                task.exception?.let { throw it }
+        // Create unique filename with timestamp
+        val timestamp = System.currentTimeMillis()
+        val filename = "${type}_${timestamp}.jpg"
+        
+        // Use correct storage path - DON'T use .child() with empty or null values
+        val storageRef = storage.reference
+            .child("users")
+            .child(userId)
+            .child("documents")
+            .child(filename)
+        
+        // Show loading
+        Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show()
+        
+        // Upload with proper error handling
+        storageRef.putFile(uri)
+            .addOnProgressListener { taskSnapshot ->
+                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                // Update progress if you have a progress bar
             }
-            ref.downloadUrl
-        }.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val downloadUrl = task.result.toString()
-                if (type == "profile") {
-                    database.child("users").child(userId).child("profilePic").setValue(downloadUrl)
-                } else {
-                    database.child("users").child(userId).child("docs").child(type).setValue(downloadUrl)
+            .addOnSuccessListener { taskSnapshot ->
+                // Get download URL after successful upload
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    // Save URL to database
+                    if (type == "profile") {
+                        database.child("users").child(userId).child("profilePic").setValue(downloadUri.toString())
+                    } else {
+                        database.child("users").child(userId).child("docs").child(type).setValue(downloadUri.toString())
+                    }
+                    Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(this, "Upload Successful!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Upload Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
             }
-        }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
     }
 
     private fun setupStatusTimeline() {

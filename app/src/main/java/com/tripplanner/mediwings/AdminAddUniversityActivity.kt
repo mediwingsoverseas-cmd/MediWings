@@ -55,26 +55,43 @@ class AdminAddUniversityActivity : AppCompatActivity() {
             return
         }
 
-        val fileName = UUID.randomUUID().toString()
-        val ref = storage.reference.child("universities/$fileName.jpg")
+        // Create unique filename with timestamp
+        val timestamp = System.currentTimeMillis()
+        val fileName = "university_${timestamp}.jpg"
+        
+        // Use correct storage path
+        val storageRef = storage.reference
+            .child("universities")
+            .child(fileName)
 
-        ref.putFile(imageUri!!).addOnSuccessListener {
-            ref.downloadUrl.addOnSuccessListener { downloadUrl ->
-                val uniId = database.reference.child("Universities").push().key ?: return@addOnSuccessListener
-                val uniData = mapOf(
-                    "id" to uniId,
-                    "name" to name,
-                    "details" to details,
-                    "imageUrl" to downloadUrl.toString()
-                )
-                database.reference.child("Universities").child(uniId).setValue(uniData)
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "University Added!", Toast.LENGTH_SHORT).show()
-                        finish()
-                    }
+        Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show()
+        
+        storageRef.putFile(imageUri!!)
+            .addOnProgressListener { taskSnapshot ->
+                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                // Update progress if needed
             }
-        }.addOnFailureListener {
-            Toast.makeText(this, "Failed to upload image", Toast.LENGTH_SHORT).show()
-        }
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                    val uniId = database.reference.child("Universities").push().key ?: return@addOnSuccessListener
+                    val uniData = mapOf(
+                        "id" to uniId,
+                        "name" to name,
+                        "details" to details,
+                        "imageUrl" to downloadUrl.toString()
+                    )
+                    database.reference.child("Universities").child(uniId).setValue(uniData)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "University Added!", Toast.LENGTH_SHORT).show()
+                            finish()
+                        }
+                        .addOnFailureListener { exception ->
+                            Toast.makeText(this, "Failed to save: ${exception.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
     }
 }

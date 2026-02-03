@@ -105,21 +105,31 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     private fun uploadBannerToFirebase(fileUri: Uri) {
         Toast.makeText(this, "Uploading Banner $currentBannerId...", Toast.LENGTH_SHORT).show()
-        val storageRef = storage.reference.child("banners/banner_$currentBannerId.jpg")
+        
+        // Create unique filename with timestamp
+        val timestamp = System.currentTimeMillis()
+        val filename = "banner_${currentBannerId}_${timestamp}.jpg"
+        
+        // Use correct storage path
+        val storageRef = storage.reference
+            .child("banners")
+            .child(filename)
 
-        storageRef.putFile(fileUri).continueWithTask { task ->
-            if (!task.isSuccessful) {
-                task.exception?.let { throw it }
+        storageRef.putFile(fileUri)
+            .addOnProgressListener { taskSnapshot ->
+                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                // Update progress if needed
             }
-            storageRef.downloadUrl
-        }.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val downloadUri = task.result
-                saveBannerUrlToDatabase(downloadUri.toString())
-            } else {
-                Toast.makeText(this, "Upload Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+            .addOnSuccessListener { taskSnapshot ->
+                // Get download URL after successful upload
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    saveBannerUrlToDatabase(downloadUri.toString())
+                    Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show()
+                }
             }
-        }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
     }
 
     private fun saveBannerUrlToDatabase(url: String) {
