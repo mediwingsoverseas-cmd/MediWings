@@ -1,8 +1,11 @@
 package com.tripplanner.mediwings
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -42,6 +45,15 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { uploadImage(it, uploadType) }
+    }
+    
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+            // Permission granted, proceed with image picker
+            pickImageLauncher.launch("image/*")
+        } else {
+            Toast.makeText(this, "Permission denied. Cannot upload images.", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -184,7 +196,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
         ivProfile.setOnClickListener {
             uploadType = "profile"
-            pickImageLauncher.launch("image/*")
+            checkPermissionAndPickImage()
         }
     }
 
@@ -244,10 +256,48 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     }
 
     private fun setupDocUploads() {
-        findViewById<Button>(R.id.btnUploadPhotos).setOnClickListener { uploadType = "photos"; pickImageLauncher.launch("image/*") }
-        findViewById<Button>(R.id.btnUploadAadhar).setOnClickListener { uploadType = "aadhar"; pickImageLauncher.launch("image/*") }
-        findViewById<Button>(R.id.btnUploadPassport).setOnClickListener { uploadType = "passport"; pickImageLauncher.launch("image/*") }
-        findViewById<Button>(R.id.btnUploadHIV).setOnClickListener { uploadType = "hiv"; pickImageLauncher.launch("image/*") }
+        findViewById<Button>(R.id.btnUploadPhotos).setOnClickListener { 
+            uploadType = "photos"
+            checkPermissionAndPickImage()
+        }
+        findViewById<Button>(R.id.btnUploadAadhar).setOnClickListener { 
+            uploadType = "aadhar"
+            checkPermissionAndPickImage()
+        }
+        findViewById<Button>(R.id.btnUploadPassport).setOnClickListener { 
+            uploadType = "passport"
+            checkPermissionAndPickImage()
+        }
+        findViewById<Button>(R.id.btnUploadHIV).setOnClickListener { 
+            uploadType = "hiv"
+            checkPermissionAndPickImage()
+        }
+    }
+    
+    private fun checkPermissionAndPickImage() {
+        // For Android 13+ (API 33/TIRAMISU and higher), use READ_MEDIA_IMAGES
+        // For older versions (API 32 and below), use READ_EXTERNAL_STORAGE
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        
+        when {
+            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
+                // Permission already granted
+                pickImageLauncher.launch("image/*")
+            }
+            shouldShowRequestPermissionRationale(permission) -> {
+                // Show explanation why permission is needed
+                Toast.makeText(this, "Permission needed to upload images", Toast.LENGTH_LONG).show()
+                requestPermissionLauncher.launch(permission)
+            }
+            else -> {
+                // Request permission
+                requestPermissionLauncher.launch(permission)
+            }
+        }
     }
 
     private fun uploadImage(uri: Uri, type: String) {
@@ -281,13 +331,21 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                                 val ivProfile = findViewById<ImageView>(R.id.ivProfilePic)
                                 Glide.with(this).load(downloadUri).circleCrop().into(ivProfile)
                             }
+                            .addOnFailureListener { exception ->
+                                Toast.makeText(this, "Failed to save profile picture: ${exception.message}", Toast.LENGTH_LONG).show()
+                            }
                     } else {
                         database.child("users").child(userId).child("documents").child(type)
                             .setValue(downloadUri.toString())
                             .addOnSuccessListener {
                                 Toast.makeText(this, "$type uploaded successfully!", Toast.LENGTH_SHORT).show()
                             }
+                            .addOnFailureListener { exception ->
+                                Toast.makeText(this, "Failed to save $type: ${exception.message}", Toast.LENGTH_LONG).show()
+                            }
                     }
+                }.addOnFailureListener { exception ->
+                    Toast.makeText(this, "Failed to get download URL: ${exception.message}", Toast.LENGTH_LONG).show()
                 }
             }
             .addOnFailureListener { exception ->

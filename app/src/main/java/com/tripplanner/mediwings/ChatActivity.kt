@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -190,31 +191,35 @@ class ChatActivity : AppCompatActivity() {
                     status = "sent"
                 )
                 
-                messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
-                    etMessage.setText("")
-                    updateTypingStatus(false)
-                    
-                    // Update meta information
-                    val metaUpdates = hashMapOf<String, Any>(
-                        "lastMessage" to text,
-                        "lastMessageTime" to msg.timestamp,
-                        "lastSenderId" to currentUserId
-                    )
-                    
-                    // Increment unread count for the other user
-                    val unreadField = if (isAdmin) "studentUnreadCount" else "adminUnreadCount"
-                    database.child("Chats").child(chatId!!).child("meta").child(unreadField)
-                        .runTransaction(object : Transaction.Handler {
-                            override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                                val currentCount = mutableData.getValue(Int::class.java) ?: 0
-                                mutableData.value = currentCount + 1
-                                return Transaction.success(mutableData)
-                            }
-                            override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {}
-                        })
-                    
-                    metaRef.updateChildren(metaUpdates)
-                }
+                messagesRef.child(messageId).setValue(msg)
+                    .addOnSuccessListener {
+                        etMessage.setText("")
+                        updateTypingStatus(false)
+                        
+                        // Update meta information
+                        val metaUpdates = hashMapOf<String, Any>(
+                            "lastMessage" to text,
+                            "lastMessageTime" to msg.timestamp,
+                            "lastSenderId" to currentUserId
+                        )
+                        
+                        // Increment unread count for the other user
+                        val unreadField = if (isAdmin) "studentUnreadCount" else "adminUnreadCount"
+                        database.child("Chats").child(chatId!!).child("meta").child(unreadField)
+                            .runTransaction(object : Transaction.Handler {
+                                override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                                    val currentCount = mutableData.getValue(Int::class.java) ?: 0
+                                    mutableData.value = currentCount + 1
+                                    return Transaction.success(mutableData)
+                                }
+                                override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {}
+                            })
+                        
+                        metaRef.updateChildren(metaUpdates)
+                    }
+                    .addOnFailureListener { exception ->
+                        Toast.makeText(this, "Failed to send message: ${exception.message}", Toast.LENGTH_SHORT).show()
+                    }
             }
         }
     }
