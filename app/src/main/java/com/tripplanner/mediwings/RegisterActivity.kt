@@ -18,6 +18,13 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
+        // Add toolbar with back button
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Create Account"
+        toolbar.setNavigationOnClickListener { finish() }
+
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
 

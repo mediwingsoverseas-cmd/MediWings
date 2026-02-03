@@ -13,6 +13,13 @@ class AdminEditContactActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_edit_contact)
 
+        // Add toolbar with back button
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Edit Contact Info"
+        toolbar.setNavigationOnClickListener { finish() }
+
         val etOfficialEmail = findViewById<EditText>(R.id.etOfficialEmail)
         val etJaveedEmail = findViewById<EditText>(R.id.etJaveedEmail)
         val etPhone1 = findViewById<EditText>(R.id.etPhone1)
