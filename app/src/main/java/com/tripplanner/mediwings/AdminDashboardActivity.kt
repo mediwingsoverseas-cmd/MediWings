@@ -5,11 +5,15 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 
 class AdminDashboardActivity : AppCompatActivity() {
@@ -29,6 +33,9 @@ class AdminDashboardActivity : AppCompatActivity() {
         setContentView(R.layout.activity_admin_dashboard)
 
         etHomeContent = findViewById(R.id.etHomeContent)
+        
+        // Load dashboard stats
+        loadDashboardStats()
 
         findViewById<Button>(R.id.btnAdminStudents).setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
@@ -137,5 +144,34 @@ class AdminDashboardActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 Toast.makeText(this, "Banner $currentBannerId Saved!", Toast.LENGTH_SHORT).show()
             }
+    }
+    
+    private fun loadDashboardStats() {
+        val tvTotalStudents = findViewById<TextView>(R.id.tvTotalStudents)
+        val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
+        
+        // Count total students
+        database.reference.child("users").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var studentCount = 0
+                for (userSnapshot in snapshot.children) {
+                    val role = userSnapshot.child("role").value?.toString()
+                    if (role == "student") {
+                        studentCount++
+                    }
+                }
+                tvTotalStudents.text = studentCount.toString()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+        
+        // Count active chats
+        database.reference.child("Chats").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val chatCount = snapshot.childrenCount.toInt()
+                tvActiveChats.text = chatCount.toString()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
     }
 }
