@@ -113,25 +113,19 @@ class AdminDashboardActivity : AppCompatActivity() {
     private fun uploadBannerToFirebase(fileUri: Uri) {
         Toast.makeText(this, "Uploading Banner $currentBannerId...", Toast.LENGTH_SHORT).show()
         
-        // Create unique filename with timestamp
         val timestamp = System.currentTimeMillis()
-        val filename = "banner_${currentBannerId}_${timestamp}.jpg"
-        
-        // Use correct storage path
         val storageRef = storage.reference
             .child("banners")
-            .child(filename)
+            .child("banner_${currentBannerId}_${timestamp}.jpg")
 
         storageRef.putFile(fileUri)
-            .addOnSuccessListener { taskSnapshot ->
-                // Get download URL after successful upload
+            .addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     saveBannerUrlToDatabase(downloadUri.toString())
-                    Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show()
                 }
             }
             .addOnFailureListener { exception ->
-                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Upload Failed: ${exception.message}", Toast.LENGTH_LONG).show()
             }
     }
 

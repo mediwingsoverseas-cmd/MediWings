@@ -9,8 +9,8 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/gold_accent"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+        android:background="@color/primary"
+        app:titleTextColor="@color/gold" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvUserList"
