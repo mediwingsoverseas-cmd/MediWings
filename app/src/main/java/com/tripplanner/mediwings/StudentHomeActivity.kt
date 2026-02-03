@@ -275,8 +275,8 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     }
     
     private fun checkPermissionAndPickImage() {
-        // For Android 13+ (API 33+), use READ_MEDIA_IMAGES
-        // For older versions, use READ_EXTERNAL_STORAGE
+        // For Android 13+ (API 33/TIRAMISU and higher), use READ_MEDIA_IMAGES
+        // For older versions (API 32 and below), use READ_EXTERNAL_STORAGE
         val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_IMAGES
         } else {
