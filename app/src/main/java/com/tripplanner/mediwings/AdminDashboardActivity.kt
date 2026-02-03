@@ -1,7 +1,10 @@
 package com.tripplanner.mediwings
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -9,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -26,6 +30,15 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { uploadBannerToFirebase(it) }
+    }
+    
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+            // Permission granted, proceed with image picker
+            pickImageLauncher.launch("image/*")
+        } else {
+            Toast.makeText(this, "Permission denied. Cannot upload banners.", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,17 +72,17 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnUploadBanner1).setOnClickListener {
             currentBannerId = 1
-            pickImageLauncher.launch("image/*")
+            checkPermissionAndPickImage()
         }
 
         findViewById<Button>(R.id.btnUploadBanner2).setOnClickListener {
             currentBannerId = 2
-            pickImageLauncher.launch("image/*")
+            checkPermissionAndPickImage()
         }
 
         findViewById<Button>(R.id.btnUploadBanner3).setOnClickListener {
             currentBannerId = 3
-            pickImageLauncher.launch("image/*")
+            checkPermissionAndPickImage()
         }
 
         findViewById<Button>(R.id.btnInsertBold).setOnClickListener {
@@ -122,6 +135,8 @@ class AdminDashboardActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     saveBannerUrlToDatabase(downloadUri.toString())
+                }.addOnFailureListener { exception ->
+                    Toast.makeText(this, "Failed to get download URL: ${exception.message}", Toast.LENGTH_LONG).show()
                 }
             }
             .addOnFailureListener { exception ->
@@ -134,6 +149,35 @@ class AdminDashboardActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 Toast.makeText(this, "Banner $currentBannerId Saved!", Toast.LENGTH_SHORT).show()
             }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Failed to save banner: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+    
+    private fun checkPermissionAndPickImage() {
+        // For Android 13+ (API 33+), use READ_MEDIA_IMAGES
+        // For older versions, use READ_EXTERNAL_STORAGE
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        
+        when {
+            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
+                // Permission already granted
+                pickImageLauncher.launch("image/*")
+            }
+            shouldShowRequestPermissionRationale(permission) -> {
+                // Show explanation why permission is needed
+                Toast.makeText(this, "Permission needed to upload banners", Toast.LENGTH_LONG).show()
+                requestPermissionLauncher.launch(permission)
+            }
+            else -> {
+                // Request permission
+                requestPermissionLauncher.launch(permission)
+            }
+        }
     }
     
     private fun loadDashboardStats() {
