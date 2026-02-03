@@ -331,6 +331,18 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val indicator = view.findViewById<View>(R.id.cvIndicator)
         val line = view.findViewById<View>(R.id.view_line)
         val ivStepImage = view.findViewById<ImageView>(R.id.ivStepImage)
+        val ivStepIcon = view.findViewById<ImageView>(R.id.ivStepIcon)
+        
+        // Set icon based on step title
+        val iconRes = when {
+            title.contains("Application", ignoreCase = true) || title.contains("Documents", ignoreCase = true) -> R.drawable.ic_document
+            title.contains("Verification", ignoreCase = true) || title.contains("Approved", ignoreCase = true) -> R.drawable.ic_verified
+            title.contains("Visa", ignoreCase = true) -> R.drawable.ic_visa
+            title.contains("Flight", ignoreCase = true) -> R.drawable.ic_flight
+            isDone -> R.drawable.ic_graduate
+            else -> R.drawable.ic_document
+        }
+        ivStepIcon.setImageResource(iconRes)
 
         if (isDone) {
             tvStatus.text = "Completed"
