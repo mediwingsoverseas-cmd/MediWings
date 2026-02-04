@@ -127,7 +127,6 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
     private fun openChat() {
         val intent = Intent(this, ChatActivity::class.java)
         intent.putExtra("IS_ADMIN", false)
-        intent.putExtra("USER_ROLE", "worker")
         startActivity(intent)
     }
 

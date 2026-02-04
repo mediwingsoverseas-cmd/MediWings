@@ -628,11 +628,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             R.id.nav_home -> {
                 // Already on home, just close drawer
             }
-            R.id.nav_chat -> {
-                val intent = Intent(this, ChatActivity::class.java)
-                intent.putExtra("USER_ROLE", "student")
-                startActivity(intent)
-            }
+            R.id.nav_chat -> startActivity(Intent(this, ChatActivity::class.java))
             R.id.nav_contact -> startActivity(Intent(this, ContactActivity::class.java))
             R.id.nav_logout -> {
                 auth.signOut()
