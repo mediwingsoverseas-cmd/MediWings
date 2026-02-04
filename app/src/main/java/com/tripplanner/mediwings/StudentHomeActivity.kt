@@ -340,9 +340,11 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                             .setValue(downloadUri.toString())
                             .addOnSuccessListener {
                                 Toast.makeText(this, "Profile picture updated!", Toast.LENGTH_SHORT).show()
-                                // Reload the image
-                                val ivProfile = findViewById<ImageView>(R.id.ivProfilePic)
-                                Glide.with(this).load(downloadUri).circleCrop().into(ivProfile)
+                                // Reload the image only if activity is still valid
+                                if (!isFinishing && !isDestroyed) {
+                                    val ivProfile = findViewById<ImageView>(R.id.ivProfilePic)
+                                    Glide.with(this@StudentHomeActivity).load(downloadUri).circleCrop().into(ivProfile)
+                                }
                             }
                             .addOnFailureListener { exception ->
                                 Toast.makeText(this, "Failed to save profile picture: ${exception.message}", Toast.LENGTH_LONG).show()

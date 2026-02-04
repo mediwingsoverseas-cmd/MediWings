@@ -44,21 +44,21 @@ class MainActivity : AppCompatActivity() {
         
         var isWorkerSelected = false
         
-        // Toggle button behavior
+        // Toggle button behavior - Student is selected by default
         btnRoleStudent.setOnClickListener {
             isWorkerSelected = false
-            btnRoleStudent.setBackgroundColor(getColor(R.color.gold_premium))
-            btnRoleStudent.setTextColor(getColor(R.color.primary_premium))
-            btnRoleWorker.setBackgroundColor(getColor(android.R.color.transparent))
-            btnRoleWorker.setTextColor(getColor(R.color.gold_premium))
+            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
+            btnRoleStudent.setTextColor(getColor(R.color.white))
+            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
+            btnRoleWorker.setTextColor(getColor(R.color.white))
         }
         
         btnRoleWorker.setOnClickListener {
             isWorkerSelected = true
-            btnRoleWorker.setBackgroundColor(getColor(R.color.gold_premium))
-            btnRoleWorker.setTextColor(getColor(R.color.primary_premium))
-            btnRoleStudent.setBackgroundColor(getColor(android.R.color.transparent))
-            btnRoleStudent.setTextColor(getColor(R.color.gold_premium))
+            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button_selected))
+            btnRoleWorker.setTextColor(getColor(R.color.white))
+            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button))
+            btnRoleStudent.setTextColor(getColor(R.color.white))
         }
 
         btnLogin.setOnClickListener {
