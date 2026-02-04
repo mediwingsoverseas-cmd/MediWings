@@ -98,32 +98,31 @@ class AdminEditContactActivity : AppCompatActivity() {
     }
 
     private fun saveAllContacts() {
-        // Build contacts data by iterating through RecyclerView children
+        // Build contacts data from the in-memory list by forcing adapter to sync
         val contactsToSave = mutableListOf<ContactEntry>()
         
-        for (i in 0 until rvContacts.childCount) {
-            val view = rvContacts.getChildAt(i)
-            val etName = view.findViewById<EditText>(R.id.etContactName)
-            val etEmail = view.findViewById<EditText>(R.id.etContactEmail)
-            val etPhone = view.findViewById<EditText>(R.id.etContactPhone)
-            
-            val name = etName?.text?.toString()?.trim() ?: ""
-            val email = etEmail?.text?.toString()?.trim() ?: ""
-            val phone = etPhone?.text?.toString()?.trim() ?: ""
-            
-            // Skip completely empty entries
-            if (name.isEmpty() && email.isEmpty() && phone.isEmpty()) {
-                continue
-            }
-            
-            // Validate that non-empty entries have required fields
-            if (name.isEmpty() || (email.isEmpty() && phone.isEmpty())) {
-                Toast.makeText(this, "Each contact must have a name and at least email or phone", Toast.LENGTH_LONG).show()
-                return
-            }
-            
-            if (i < contactsList.size) {
-                contactsToSave.add(ContactEntry(contactsList[i].id, name, email, phone))
+        // Iterate through the adapter's data and get EditText values from ViewHolders
+        for (i in 0 until adapter.itemCount) {
+            val viewHolder = rvContacts.findViewHolderForAdapterPosition(i) as? ContactAdapter.ViewHolder
+            if (viewHolder != null) {
+                val name = viewHolder.etName.text.toString().trim()
+                val email = viewHolder.etEmail.text.toString().trim()
+                val phone = viewHolder.etPhone.text.toString().trim()
+                
+                // Skip completely empty entries
+                if (name.isEmpty() && email.isEmpty() && phone.isEmpty()) {
+                    continue
+                }
+                
+                // Validate that non-empty entries have required fields
+                if (name.isEmpty() || (email.isEmpty() && phone.isEmpty())) {
+                    Toast.makeText(this, "Each contact must have a name and at least email or phone", Toast.LENGTH_LONG).show()
+                    return
+                }
+                
+                if (i < contactsList.size) {
+                    contactsToSave.add(ContactEntry(contactsList[i].id, name, email, phone))
+                }
             }
         }
         
@@ -176,7 +175,10 @@ class AdminEditContactActivity : AppCompatActivity() {
             holder.etPhone.setText(contact.phone)
             
             holder.btnRemove.setOnClickListener {
-                onRemove(holder.adapterPosition)
+                val adapterPos = holder.bindingAdapterPosition
+                if (adapterPos != RecyclerView.NO_POSITION) {
+                    onRemove(adapterPos)
+                }
             }
         }
 

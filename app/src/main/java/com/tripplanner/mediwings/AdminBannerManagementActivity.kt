@@ -269,11 +269,17 @@ class AdminBannerManagementActivity : AppCompatActivity() {
                 .into(holder.ivBanner)
             
             holder.btnRemove.setOnClickListener {
-                onRemove(holder.adapterPosition)
+                val adapterPos = holder.bindingAdapterPosition
+                if (adapterPos != RecyclerView.NO_POSITION) {
+                    onRemove(adapterPos)
+                }
             }
             
             holder.btnView.setOnClickListener {
-                onView(holder.adapterPosition)
+                val adapterPos = holder.bindingAdapterPosition
+                if (adapterPos != RecyclerView.NO_POSITION) {
+                    onView(adapterPos)
+                }
             }
         }
 
