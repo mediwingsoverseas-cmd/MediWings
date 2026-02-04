@@ -39,9 +39,10 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     
     private var uploadType = "" // "photos", "aadhar", "passport", "hiv", "profile"
 
-    private lateinit var bannerScroll: HorizontalScrollView
+    private lateinit var rvBannersHome: RecyclerView
     private val scrollHandler = Handler(Looper.getMainLooper())
     private val bannerWidth = 320 
+    private var currentBannerPosition = 0 
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { uploadImage(it, uploadType) }
@@ -85,14 +86,11 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        findViewById<HorizontalScrollView>(R.id.banner_scroll)?.let {
-            bannerScroll = it
-            startAutoScroll()
-        }
+        rvBannersHome = findViewById(R.id.rvBannersHome)
+        setupBannersRecyclerView()
 
         setupBottomNav()
         loadUserData(navView)
-        loadBanners()
         setupDocUploads()
         setupStatusTimeline()
         loadCMSContent()
@@ -114,17 +112,48 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         })
     }
 
-    private fun startAutoScroll() {
+    private fun setupBannersRecyclerView() {
+        val layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        rvBannersHome.layoutManager = layoutManager
+        
+        val bannersList = mutableListOf<String>()
+        val adapter = BannerHomeAdapter(bannersList)
+        rvBannersHome.adapter = adapter
+        
+        // Load banners from Firebase
+        database.child("Banners").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                bannersList.clear()
+                for (data in snapshot.children) {
+                    val url = data.value?.toString()
+                    if (!url.isNullOrEmpty()) {
+                        bannersList.add(url)
+                    }
+                }
+                adapter.notifyDataSetChanged()
+                
+                // Start auto-scroll if there are banners
+                if (bannersList.isNotEmpty()) {
+                    startAutoScroll(bannersList.size)
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+    
+    private fun startAutoScroll(itemCount: Int) {
+        if (itemCount <= 1) return // No need to auto-scroll if only one banner
+        
         val runnable = object : Runnable {
             override fun run() {
-                if (!::bannerScroll.isInitialized || bannerScroll.childCount == 0) return
-                val innerLayout = bannerScroll.getChildAt(0) as? LinearLayout ?: return
-                val maxScroll = innerLayout.width - bannerScroll.width
-                if (maxScroll <= 0) return
-                val step = (bannerWidth + 12) * resources.displayMetrics.density
-                var nextX = bannerScroll.scrollX + step.toInt()
-                if (nextX >= maxScroll - 10) nextX = 0
-                bannerScroll.smoothScrollTo(nextX, 0)
+                if (!::rvBannersHome.isInitialized) return
+                
+                currentBannerPosition++
+                if (currentBannerPosition >= itemCount) {
+                    currentBannerPosition = 0
+                }
+                
+                rvBannersHome.smoothScrollToPosition(currentBannerPosition)
                 scrollHandler.postDelayed(this, 4000)
             }
         }
@@ -217,23 +246,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         }
     }
 
-    private fun loadBanners() {
-        val ivBanner1 = findViewById<ImageView>(R.id.ivBanner1)
-        val ivBanner2 = findViewById<ImageView>(R.id.ivBanner2)
-        val ivBanner3 = findViewById<ImageView>(R.id.ivBanner3)
-
-        database.child("Banners").addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val b1 = snapshot.child("banner1").value?.toString()
-                val b2 = snapshot.child("banner2").value?.toString()
-                val b3 = snapshot.child("banner3").value?.toString()
-                if (!b1.isNullOrEmpty()) Glide.with(this@StudentHomeActivity).load(b1).into(ivBanner1)
-                if (!b2.isNullOrEmpty()) Glide.with(this@StudentHomeActivity).load(b2).into(ivBanner2)
-                if (!b3.isNullOrEmpty()) Glide.with(this@StudentHomeActivity).load(b3).into(ivBanner3)
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-    }
+    // Removed loadBanners() - now handled in setupBannersRecyclerView()
 
     private fun loadUniversities() {
         val rv = findViewById<RecyclerView>(R.id.rvUniversitiesHome)
@@ -492,6 +505,24 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             holder.tvDetails.text = uni.details
             if (uni.imageUrl.isNotEmpty()) Glide.with(holder.itemView.context).load(uni.imageUrl).into(holder.ivPhoto)
         }
+        override fun getItemCount() = list.size
+    }
+    
+    private class BannerHomeAdapter(private val list: List<String>) : RecyclerView.Adapter<BannerHomeAdapter.ViewHolder>() {
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val ivBanner: ImageView = view.findViewById(R.id.ivBannerHome)
+        }
+        
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_banner_home, parent, false)
+            return ViewHolder(view)
+        }
+        
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val url = list[position]
+            Glide.with(holder.itemView.context).load(url).centerCrop().into(holder.ivBanner)
+        }
+        
         override fun getItemCount() = list.size
     }
 }
