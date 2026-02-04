@@ -75,9 +75,15 @@ class StudentActivity : AppCompatActivity(), NavigationView.OnNavigationItemSele
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.nav_home -> { /* Already here */ }
-            R.id.nav_chat -> Toast.makeText(this, "Opening Chat...", Toast.LENGTH_SHORT).show()
-            R.id.nav_contact -> Toast.makeText(this, "Contact Us: 123-456", Toast.LENGTH_SHORT).show()
+            R.id.nav_home -> {
+                startActivity(Intent(this, StudentHomeActivity::class.java))
+                finish()
+            }
+            R.id.nav_chat -> {
+                val intent = Intent(this, ChatActivity::class.java)
+                startActivity(intent)
+            }
+            R.id.nav_contact -> startActivity(Intent(this, ContactActivity::class.java))
             R.id.nav_logout -> {
                 auth.signOut()
                 startActivity(Intent(this, MainActivity::class.java))

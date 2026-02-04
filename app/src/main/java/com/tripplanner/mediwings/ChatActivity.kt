@@ -1,5 +1,9 @@
 package com.tripplanner.mediwings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,13 +15,16 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -28,7 +35,9 @@ data class Message(
     val senderName: String = "",
     val message: String = "",
     val timestamp: Long = 0,
-    val status: String = "sent" 
+    val status: String = "sent",
+    val mediaUrl: String = "",
+    val mediaType: String = "" // "image", "file", or ""
 )
 
 sealed class ChatItem {
@@ -40,9 +49,11 @@ class ChatActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var database: DatabaseReference
+    private lateinit var storage: FirebaseStorage
     private lateinit var rvMessages: RecyclerView
     private lateinit var etMessage: EditText
     private lateinit var btnSend: FloatingActionButton
+    private lateinit var btnAttach: ImageView
     private lateinit var tvUserName: TextView
     private lateinit var tvOnlineStatus: TextView
     private lateinit var tvTypingIndicator: TextView
@@ -58,12 +69,25 @@ class ChatActivity : AppCompatActivity() {
     private var metaListener: ValueEventListener? = null
     private var onlineListener: ValueEventListener? = null
     private var typingTimer: Timer? = null
+    
+    private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { uploadMedia(it) }
+    }
+    
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+            pickMediaLauncher.launch("image/*")
+        } else {
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
         auth = FirebaseAuth.getInstance()
+        storage = FirebaseStorage.getInstance()
         
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
         
@@ -183,28 +207,157 @@ class ChatActivity : AppCompatActivity() {
         btnSend.setOnClickListener {
             val text = etMessage.text.toString().trim()
             if (text.isNotEmpty()) {
-                val messageId = messagesRef.push().key ?: return@setOnClickListener
-                val msg = Message(
-                    id = messageId,
-                    senderId = currentUserId,
-                    senderName = if (isAdmin) "Admin" else "Student",
-                    message = text,
-                    timestamp = System.currentTimeMillis()
-                )
-                
-                messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
-                    etMessage.setText("")
-                    updateTypingStatus(false)
-                    
-                    val metaUpdates = hashMapOf<String, Any>(
-                        "lastMessage" to text,
-                        "lastMessageTime" to msg.timestamp,
-                        "lastSenderId" to currentUserId
-                    )
-                    metaRef.updateChildren(metaUpdates)
-                }
+                sendTextMessage(text, messagesRef)
             }
         }
+        
+        // Try to find attach button (if it doesn't exist, we'll handle gracefully)
+        try {
+            btnAttach = findViewById(R.id.btnAttach)
+            btnAttach.setOnClickListener {
+                checkPermissionAndPickMedia()
+            }
+        } catch (e: Exception) {
+            // Attach button doesn't exist in layout, skip
+        }
+    }
+    
+    private fun sendTextMessage(text: String, messagesRef: DatabaseReference) {
+        val messageId = messagesRef.push().key ?: return
+        val msg = Message(
+            id = messageId,
+            senderId = currentUserId,
+            senderName = if (isAdmin) "Admin" else "Student",
+            message = text,
+            timestamp = System.currentTimeMillis()
+        )
+        
+        messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
+            etMessage.setText("")
+            updateTypingStatus(false)
+            
+            val metaRef = database.child("Chats").child(chatId!!).child("meta")
+            val metaUpdates = hashMapOf<String, Any>(
+                "lastMessage" to text,
+                "lastMessageTime" to msg.timestamp,
+                "lastSenderId" to currentUserId
+            )
+            metaRef.updateChildren(metaUpdates)
+            
+            // Trigger notification for the other user
+            triggerNotification(text, "text")
+        }
+    }
+    
+    private fun sendMediaMessage(mediaUrl: String, mediaType: String, messagesRef: DatabaseReference) {
+        val messageId = messagesRef.push().key ?: return
+        val displayText = if (mediaType == "image") "📷 Photo" else "📎 File"
+        val msg = Message(
+            id = messageId,
+            senderId = currentUserId,
+            senderName = if (isAdmin) "Admin" else "Student",
+            message = displayText,
+            timestamp = System.currentTimeMillis(),
+            mediaUrl = mediaUrl,
+            mediaType = mediaType
+        )
+        
+        messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
+            val metaRef = database.child("Chats").child(chatId!!).child("meta")
+            val metaUpdates = hashMapOf<String, Any>(
+                "lastMessage" to displayText,
+                "lastMessageTime" to msg.timestamp,
+                "lastSenderId" to currentUserId
+            )
+            metaRef.updateChildren(metaUpdates)
+            
+            // Trigger notification for the other user
+            triggerNotification(displayText, mediaType)
+        }
+    }
+    
+    private fun checkPermissionAndPickMedia() {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        
+        when {
+            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
+                pickMediaLauncher.launch("image/*")
+            }
+            shouldShowRequestPermissionRationale(permission) -> {
+                Toast.makeText(this, "Permission needed to send images", Toast.LENGTH_LONG).show()
+                requestPermissionLauncher.launch(permission)
+            }
+            else -> {
+                requestPermissionLauncher.launch(permission)
+            }
+        }
+    }
+    
+    private fun uploadMedia(uri: Uri) {
+        Toast.makeText(this, "Uploading media...", Toast.LENGTH_SHORT).show()
+        
+        // Check file size
+        val inputStream = contentResolver.openInputStream(uri)
+        val fileSize = inputStream?.available() ?: 0
+        inputStream?.close()
+        
+        if (fileSize > 1024 * 1024) { // 1MB limit
+            Toast.makeText(this, "File too large! Please select a file smaller than 1MB", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        val timestamp = System.currentTimeMillis()
+        val filename = "chat_media_${timestamp}.jpg"
+        
+        val storageRef = storage.reference
+            .child("chat_media")
+            .child(chatId!!)
+            .child(filename)
+        
+        storageRef.putFile(uri)
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    val messagesRef = database.child("Chats").child(chatId!!).child("messages")
+                    sendMediaMessage(downloadUri.toString(), "image", messagesRef)
+                    Toast.makeText(this, "Media sent!", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+    
+    private fun triggerNotification(messageText: String, messageType: String) {
+        // Get the recipient's FCM token
+        val recipientId = if (isAdmin) chatId else "admin"
+        
+        database.child("users").child(recipientId!!).child("fcmToken")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val token = snapshot.value?.toString()
+                    if (!token.isNullOrEmpty()) {
+                        // In a production app, you'd send this to your backend server
+                        // which would then use the Firebase Admin SDK to send the notification
+                        // For now, we'll update a notification trigger in the database
+                        
+                        val notificationData = hashMapOf<String, Any>(
+                            "to" to recipientId,
+                            "title" to "${if (isAdmin) "Admin" else otherUserName}",
+                            "body" to messageText,
+                            "timestamp" to System.currentTimeMillis(),
+                            "chatId" to chatId!!,
+                            "senderId" to currentUserId
+                        )
+                        
+                        database.child("NotificationQueue").push().setValue(notificationData)
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
     }
 
     private fun updateTypingStatus(isTyping: Boolean) {
@@ -253,6 +406,7 @@ class ChatActivity : AppCompatActivity() {
             val textMsg: TextView = view.findViewById(R.id.tvMessage)
             val textTime: TextView = view.findViewById(R.id.tvTime)
             val textStatus: TextView? = view.findViewById(R.id.tvStatus)
+            val imageMedia: ImageView? = try { view.findViewById(R.id.ivMessageMedia) } catch (e: Exception) { null }
         }
 
         class DateHeaderViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -286,6 +440,17 @@ class ChatActivity : AppCompatActivity() {
                         "read" -> "✓✓"
                         "delivered" -> "✓✓"
                         else -> "✓"
+                    }
+                    
+                    // Handle media messages
+                    if (msg.mediaType == "image" && msg.mediaUrl.isNotEmpty() && vh.imageMedia != null) {
+                        vh.imageMedia.visibility = View.VISIBLE
+                        Glide.with(vh.imageMedia.context)
+                            .load(msg.mediaUrl)
+                            .centerCrop()
+                            .into(vh.imageMedia)
+                    } else {
+                        vh.imageMedia?.visibility = View.GONE
                     }
                 }
             }
