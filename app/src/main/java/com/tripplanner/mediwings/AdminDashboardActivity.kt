@@ -247,14 +247,25 @@ class AdminDashboardActivity : AppCompatActivity() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Insert Image")
         
+        val container = android.widget.LinearLayout(this)
+        container.orientation = android.widget.LinearLayout.VERTICAL
+        container.setPadding(50, 20, 50, 20)
+        
         val input = EditText(this)
-        input.hint = "Enter image URL"
-        builder.setView(input)
+        input.hint = "Enter image URL (http:// or https://)"
+        container.addView(input)
+        
+        builder.setView(container)
         
         builder.setPositiveButton("Insert") { dialog, _ ->
-            val url = input.text.toString()
-            if (url.isNotEmpty()) {
-                richEditor.insertImage(url, "image", 320)
+            val url = input.text.toString().trim()
+            if (url.isNotEmpty() && isValidImageUrl(url)) {
+                // Use screen width for responsive image sizing
+                val screenWidth = resources.displayMetrics.widthPixels
+                val imageWidth = (screenWidth * 0.9).toInt() // 90% of screen width
+                richEditor.insertImage(url, "image", imageWidth)
+            } else {
+                Toast.makeText(this, "Please enter a valid image URL (http:// or https://)", Toast.LENGTH_SHORT).show()
             }
             dialog.dismiss()
         }
@@ -274,7 +285,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         container.setPadding(50, 20, 50, 20)
         
         val urlInput = EditText(this)
-        urlInput.hint = "Enter URL"
+        urlInput.hint = "Enter URL (http:// or https://)"
         container.addView(urlInput)
         
         val textInput = EditText(this)
@@ -284,10 +295,12 @@ class AdminDashboardActivity : AppCompatActivity() {
         builder.setView(container)
         
         builder.setPositiveButton("Insert") { dialog, _ ->
-            val url = urlInput.text.toString()
-            val text = textInput.text.toString()
-            if (url.isNotEmpty() && text.isNotEmpty()) {
+            val url = urlInput.text.toString().trim()
+            val text = textInput.text.toString().trim()
+            if (url.isNotEmpty() && text.isNotEmpty() && isValidUrl(url)) {
                 richEditor.insertLink(url, text)
+            } else {
+                Toast.makeText(this, "Please enter valid URL (http:// or https://) and link text", Toast.LENGTH_SHORT).show()
             }
             dialog.dismiss()
         }
@@ -297,4 +310,11 @@ class AdminDashboardActivity : AppCompatActivity() {
         
         builder.show()
     }
-}
+    
+    private fun isValidUrl(url: String): Boolean {
+        return url.startsWith("http://") || url.startsWith("https://")
+    }
+    
+    private fun isValidImageUrl(url: String): Boolean {
+        return url.startsWith("http://") || url.startsWith("https://")
+    }
