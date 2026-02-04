@@ -64,13 +64,29 @@ class ChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_chat)
 
         auth = FirebaseAuth.getInstance()
-        currentUserId = auth.currentUser?.uid ?: run {
-            finish()
-            return
-        }
         
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
-        chatId = intent.getStringExtra("USER_ID") ?: currentUserId
+        
+        // Validate admin access - admin must have both IS_ADMIN flag and valid USER_ID to chat
+        if (isAdmin) {
+            val userId = intent.getStringExtra("USER_ID")
+            if (userId.isNullOrEmpty()) {
+                Toast.makeText(this, "Cannot start chat: No user selected", Toast.LENGTH_SHORT).show()
+                finish()
+                return
+            }
+            // For admin, use "admin" as sender ID to identify admin messages
+            currentUserId = "admin"
+            chatId = userId
+        } else {
+            // For students, require Firebase authentication
+            currentUserId = auth.currentUser?.uid ?: run {
+                finish()
+                return
+            }
+            chatId = intent.getStringExtra("USER_ID") ?: currentUserId
+        }
+        
         otherUserName = intent.getStringExtra("USER_NAME") ?: "Support"
 
         database = FirebaseDatabase.getInstance().reference

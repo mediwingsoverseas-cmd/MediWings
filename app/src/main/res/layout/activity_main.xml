@@ -89,11 +89,11 @@
             android:text="STUDENT"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:backgroundTint="@color/gold_premium"
-            android:textColor="@color/primary_premium"
+            android:backgroundTint="@color/student_button"
+            android:textColor="@color/white"
             android:layout_marginEnd="8dp"
             app:icon="@drawable/ic_student"
-            app:iconTint="@color/primary_premium"
+            app:iconTint="@color/white"
             style="@style/Widget.Material3.Button"/>
 
         <Button
@@ -104,11 +104,11 @@
             android:text="WORKER"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:backgroundTint="@android:color/transparent"
-            android:textColor="@color/gold_premium"
+            android:backgroundTint="@color/worker_button"
+            android:textColor="@color/white"
             app:icon="@drawable/ic_worker"
-            app:iconTint="@color/gold_premium"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            app:iconTint="@color/white"
+            style="@style/Widget.Material3.Button"/>
 
     </LinearLayout>
 

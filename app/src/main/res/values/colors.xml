@@ -51,4 +51,10 @@
 
     <color name="purple_200">#D4AF37</color>
     <color name="purple_500">#0D1B2A</color>
+    
+    <!-- Login Button Colors -->
+    <color name="student_button">#1E88E5</color>  <!-- Blue - for Student -->
+    <color name="worker_button">#43A047</color>   <!-- Green - for Worker -->
+    <color name="student_button_selected">#1565C0</color>  <!-- Darker Blue - selected -->
+    <color name="worker_button_selected">#2E7D32</color>   <!-- Darker Green - selected -->
 </resources>

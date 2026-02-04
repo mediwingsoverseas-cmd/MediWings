@@ -32,6 +32,8 @@ class AdminDashboardActivity : AppCompatActivity() {
         richEditor.setEditorFontSize(16)
         richEditor.setPadding(10, 10, 10, 10)
         richEditor.setPlaceholder("Enter content here...")
+        richEditor.setInputEnabled(true)
+        richEditor.focusEditor()
         
         // Load dashboard stats
         loadDashboardStats()
