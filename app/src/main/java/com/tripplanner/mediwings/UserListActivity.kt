@@ -21,7 +21,6 @@ class UserListActivity : AppCompatActivity() {
     private lateinit var rvUserList: RecyclerView
     private lateinit var database: DatabaseReference
     private var mode: String? = null // "chat" or "control"
-    private var userRole: String = "student" // "student" or "worker"
     private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,12 +29,10 @@ class UserListActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         mode = intent.getStringExtra("MODE")
-        userRole = intent.getStringExtra("ROLE") ?: "student"
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        val roleLabel = if (userRole == "worker") "Worker" else "Student"
-        supportActionBar?.title = if (mode == "chat") "Select $roleLabel to Chat" else "Select $roleLabel"
+        supportActionBar?.title = if (mode == "chat") "Select User to Chat" else "Select Student"
         toolbar.setNavigationOnClickListener { finish() }
 
         rvUserList = findViewById(R.id.rvUserList)
@@ -49,7 +46,6 @@ class UserListActivity : AppCompatActivity() {
                 val intent = Intent(this, ChatActivity::class.java)
                 intent.putExtra("USER_ID", user.userData.uid)
                 intent.putExtra("USER_NAME", user.userData.name)
-                intent.putExtra("USER_ROLE", userRole)
                 intent.putExtra("IS_ADMIN", true)
                 startActivity(intent)
             } else {
@@ -70,9 +66,8 @@ class UserListActivity : AppCompatActivity() {
                     val uid = data.key ?: continue
                     val role = data.child("role").value?.toString() ?: ""
                     
-                    // Filter out admin users and users not matching the selected role
+                    // Filter out admin users
                     if (role.equals("admin", ignoreCase = true)) continue
-                    if (role != userRole) continue
                     
                     val name = data.child("name").value?.toString() ?: "Unknown"
                     val profilePic = data.child("profilePic").value?.toString() ?: ""
@@ -100,9 +95,7 @@ class UserListActivity : AppCompatActivity() {
         var loadedCount = 0
         
         users.forEach { user ->
-            // Use role-specific chat ID
-            val chatId = "${user.uid}_${userRole}"
-            chatsRef.child(chatId).child("meta").addListenerForSingleValueEvent(object : ValueEventListener {
+            chatsRef.child(user.uid).child("meta").addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val lastMessage = snapshot.child("lastMessage").value?.toString() ?: "Click to chat"
                     val lastMessageTime = snapshot.child("lastMessageTime").getValue(Long::class.java) ?: 0L
