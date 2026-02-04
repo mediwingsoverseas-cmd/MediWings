@@ -1,13 +1,33 @@
 package com.tripplanner.mediwings
 
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Toast
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+
+data class ContactEntry(
+    val id: String = "",
+    val name: String = "",
+    val email: String = "",
+    val phone: String = ""
+)
 
 class AdminEditContactActivity : AppCompatActivity() {
+
+    private lateinit var rvContacts: RecyclerView
+    private lateinit var btnAddContact: Button
+    private lateinit var btnSaveAll: Button
+    private val contactsList = mutableListOf<ContactEntry>()
+    private lateinit var adapter: ContactAdapter
+    private val database = FirebaseDatabase.getInstance().reference.child("CMS").child("contacts")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,34 +40,146 @@ class AdminEditContactActivity : AppCompatActivity() {
         supportActionBar?.title = "Edit Contact Info"
         toolbar.setNavigationOnClickListener { finish() }
 
-        val etOfficialEmail = findViewById<EditText>(R.id.etOfficialEmail)
-        val etJaveedEmail = findViewById<EditText>(R.id.etJaveedEmail)
-        val etPhone1 = findViewById<EditText>(R.id.etPhone1)
-        val etPhone2 = findViewById<EditText>(R.id.etPhone2)
-        val btnSave = findViewById<Button>(R.id.btnSaveContact)
+        rvContacts = findViewById(R.id.rvContacts)
+        btnAddContact = findViewById(R.id.btnAddContact)
+        btnSaveAll = findViewById(R.id.btnSaveContact)
 
-        val database = FirebaseDatabase.getInstance().reference.child("CMS").child("contact_info")
+        adapter = ContactAdapter(contactsList) { position ->
+            // Remove contact
+            contactsList.removeAt(position)
+            adapter.notifyItemRemoved(position)
+            adapter.notifyItemRangeChanged(position, contactsList.size)
+        }
+        
+        rvContacts.layoutManager = LinearLayoutManager(this)
+        rvContacts.adapter = adapter
 
-        database.get().addOnSuccessListener {
-            if (it.exists()) {
-                etOfficialEmail.setText(it.child("officialEmail").value?.toString())
-                etJaveedEmail.setText(it.child("javeedEmail").value?.toString())
-                etPhone1.setText(it.child("phone1").value?.toString())
-                etPhone2.setText(it.child("phone2").value?.toString())
+        // Load existing contacts
+        loadContacts()
+
+        btnAddContact.setOnClickListener {
+            val newId = database.push().key ?: return@setOnClickListener
+            contactsList.add(ContactEntry(id = newId, name = "", email = "", phone = ""))
+            adapter.notifyItemInserted(contactsList.size - 1)
+            rvContacts.smoothScrollToPosition(contactsList.size - 1)
+        }
+
+        btnSaveAll.setOnClickListener {
+            saveAllContacts()
+        }
+    }
+
+    private fun loadContacts() {
+        database.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                contactsList.clear()
+                
+                if (snapshot.exists()) {
+                    for (data in snapshot.children) {
+                        val id = data.key ?: continue
+                        val name = data.child("name").value?.toString() ?: ""
+                        val email = data.child("email").value?.toString() ?: ""
+                        val phone = data.child("phone").value?.toString() ?: ""
+                        contactsList.add(ContactEntry(id, name, email, phone))
+                    }
+                } else {
+                    // Add default empty contact if none exist
+                    val newId = database.push().key ?: return
+                    contactsList.add(ContactEntry(id = newId, name = "", email = "", phone = ""))
+                }
+                
+                adapter.notifyDataSetChanged()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@AdminEditContactActivity, "Failed to load contacts: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun saveAllContacts() {
+        // Build contacts data by iterating through RecyclerView children
+        val contactsToSave = mutableListOf<ContactEntry>()
+        
+        for (i in 0 until rvContacts.childCount) {
+            val view = rvContacts.getChildAt(i)
+            val etName = view.findViewById<EditText>(R.id.etContactName)
+            val etEmail = view.findViewById<EditText>(R.id.etContactEmail)
+            val etPhone = view.findViewById<EditText>(R.id.etContactPhone)
+            
+            val name = etName?.text?.toString()?.trim() ?: ""
+            val email = etEmail?.text?.toString()?.trim() ?: ""
+            val phone = etPhone?.text?.toString()?.trim() ?: ""
+            
+            // Skip completely empty entries
+            if (name.isEmpty() && email.isEmpty() && phone.isEmpty()) {
+                continue
+            }
+            
+            // Validate that non-empty entries have required fields
+            if (name.isEmpty() || (email.isEmpty() && phone.isEmpty())) {
+                Toast.makeText(this, "Each contact must have a name and at least email or phone", Toast.LENGTH_LONG).show()
+                return
+            }
+            
+            if (i < contactsList.size) {
+                contactsToSave.add(ContactEntry(contactsList[i].id, name, email, phone))
+            }
+        }
+        
+        // Clear and save
+        database.removeValue().addOnSuccessListener {
+            val updates = mutableMapOf<String, Any>()
+            
+            for (contact in contactsToSave) {
+                updates["${contact.id}/name"] = contact.name
+                updates["${contact.id}/email"] = contact.email
+                updates["${contact.id}/phone"] = contact.phone
+            }
+            
+            if (updates.isNotEmpty()) {
+                database.updateChildren(updates).addOnSuccessListener {
+                    Toast.makeText(this, "Contacts Updated Successfully!", Toast.LENGTH_SHORT).show()
+                    finish()
+                }.addOnFailureListener { exception ->
+                    Toast.makeText(this, "Failed to save: ${exception.message}", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                Toast.makeText(this, "No contacts to save", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private class ContactAdapter(
+        private val list: MutableList<ContactEntry>,
+        private val onRemove: (Int) -> Unit
+    ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
+
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val etName: EditText = view.findViewById(R.id.etContactName)
+            val etEmail: EditText = view.findViewById(R.id.etContactEmail)
+            val etPhone: EditText = view.findViewById(R.id.etContactPhone)
+            val btnRemove: ImageButton = view.findViewById(R.id.btnRemoveContact)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_contact_entry, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val contact = list[position]
+            
+            holder.etName.setText(contact.name)
+            holder.etEmail.setText(contact.email)
+            holder.etPhone.setText(contact.phone)
+            
+            holder.btnRemove.setOnClickListener {
+                onRemove(holder.adapterPosition)
             }
         }
 
-        btnSave.setOnClickListener {
-            val data = mapOf(
-                "officialEmail" to etOfficialEmail.text.toString(),
-                "javeedEmail" to etJaveedEmail.text.toString(),
-                "phone1" to etPhone1.text.toString(),
-                "phone2" to etPhone2.text.toString()
-            )
-            database.setValue(data).addOnSuccessListener {
-                Toast.makeText(this, "Contact Info Updated!", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
+        override fun getItemCount() = list.size
     }
 }

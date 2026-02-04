@@ -26,6 +26,7 @@
         <activity android:name=".UniversitiesListActivity" />
         <activity android:name=".ContactActivity" />
         <activity android:name=".AdminEditContactActivity" />
+        <activity android:name=".AdminBannerManagementActivity" />
 
         <activity
             android:name=".MainActivity"
