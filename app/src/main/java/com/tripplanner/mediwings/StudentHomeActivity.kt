@@ -2,6 +2,7 @@ package com.tripplanner.mediwings
 
 import android.Manifest
 import android.app.Activity
+import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -12,11 +13,12 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
+import android:view.ViewGroup
 import android.webkit.WebView
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
@@ -36,6 +38,13 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     private lateinit var auth: FirebaseAuth
     private lateinit var database: DatabaseReference
     private lateinit var storage: FirebaseStorage
+    
+    private lateinit var homeView: View
+    private lateinit var docsView: View
+    private lateinit var profileView: View
+    private lateinit var statusView: View
+    private lateinit var universitiesView: View
+    private lateinit var bottomNav: BottomNavigationView
     
     private var uploadType = "" // "photos", "aadhar", "passport", "hiv", "profile"
 
@@ -68,7 +77,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(true)
-        supportActionBar?.title = "MediWings"
+        supportActionBar?.title = "MediWings Student"
         
         val goldColor = ContextCompat.getColor(this, R.color.gold_premium)
         toolbar.setTitleTextColor(goldColor)
@@ -86,16 +95,28 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        rvBannersHome = findViewById(R.id.rvBannersHome)
-        setupBannersRecyclerView()
+        // Get view references
+        homeView = findViewById(R.id.home_view)
+        docsView = findViewById(R.id.docs_view)
+        profileView = findViewById(R.id.profile_view)
+        statusView = findViewById(R.id.status_view)
+        universitiesView = findViewById(R.id.universities_view)
+        bottomNav = findViewById(R.id.bottom_navigation)
 
+        rvBannersHome = findViewById(R.id.rvBannersHome)
+        
         setupBottomNav()
         loadUserData(navView)
+        setupBannersRecyclerView()
+        setupQuickActions()
         setupDocUploads()
         setupStatusTimeline()
-        loadCMSContent()
         setupProfileUpdate()
+        loadCMSContent()
         loadUniversities()
+        
+        // Show home by default
+        showView("home")
     }
 
     private fun loadCMSContent() {
@@ -220,28 +241,49 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     }
 
     private fun setupBottomNav() {
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        val homeView = findViewById<View>(R.id.home_view)
-        val docsView = findViewById<View>(R.id.docs_view)
-        val profileView = findViewById<View>(R.id.profile_view)
-        val statusView = findViewById<View>(R.id.status_view)
-        val uniView = findViewById<View>(R.id.universities_view)
-
         bottomNav.setOnItemSelectedListener { item ->
-            homeView.visibility = View.GONE
-            docsView.visibility = View.GONE
-            profileView.visibility = View.GONE
-            statusView.visibility = View.GONE
-            uniView.visibility = View.GONE
-
             when (item.itemId) {
-                R.id.nav_home_tab -> { homeView.visibility = View.VISIBLE; true }
-                R.id.nav_universities -> { uniView.visibility = View.VISIBLE; true }
-                R.id.bottom_profile -> { profileView.visibility = View.VISIBLE; true }
-                R.id.bottom_docs -> { docsView.visibility = View.VISIBLE; true }
-                R.id.bottom_status -> { statusView.visibility = View.VISIBLE; true }
+                R.id.nav_home_tab -> { showView("home"); true }
+                R.id.bottom_docs -> { showView("docs"); true }
+                R.id.bottom_status -> { showView("status"); true }
+                R.id.bottom_profile -> { showView("profile"); true }
                 else -> false
             }
+        }
+    }
+    
+    private fun showView(viewName: String) {
+        homeView.visibility = View.GONE
+        docsView.visibility = View.GONE
+        profileView.visibility = View.GONE
+        statusView.visibility = View.GONE
+        universitiesView.visibility = View.GONE
+
+        when (viewName) {
+            "home" -> homeView.visibility = View.VISIBLE
+            "docs" -> docsView.visibility = View.VISIBLE
+            "profile" -> profileView.visibility = View.VISIBLE
+            "status" -> statusView.visibility = View.VISIBLE
+            "universities" -> universitiesView.visibility = View.VISIBLE
+        }
+    }
+    
+    private fun setupQuickActions() {
+        // Quick Action: View Documents
+        findViewById<View>(R.id.cardViewDocuments)?.setOnClickListener {
+            showView("docs")
+            bottomNav.selectedItemId = R.id.bottom_docs
+        }
+        
+        // Quick Action: View Universities
+        findViewById<View>(R.id.cardViewUniversities)?.setOnClickListener {
+            showView("universities")
+        }
+        
+        // Quick Action: View Tracking
+        findViewById<View>(R.id.cardViewTracking)?.setOnClickListener {
+            showView("status")
+            bottomNav.selectedItemId = R.id.bottom_status
         }
     }
 
@@ -252,6 +294,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val etMobile = findViewById<EditText>(R.id.etProfileMobile)
         val tvEmail = findViewById<TextView>(R.id.tvProfileEmail)
         val ivProfile = findViewById<ImageView>(R.id.ivProfilePic)
+        val tvWelcome = findViewById<TextView>(R.id.tvWelcome)
         
         val headerView = navView.getHeaderView(0)
         val ivNavProfile = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
@@ -272,6 +315,9 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                     tvEmail.text = email
                     tvNavName.text = name
                     tvNavEmail.text = email
+                    
+                    // Update welcome message
+                    tvWelcome.text = "Hello, $name!"
 
                     if (!pic.isNullOrEmpty()) {
                         Glide.with(this@StudentHomeActivity).load(pic).circleCrop().into(ivProfile)
@@ -366,14 +412,17 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             val imageView = findViewById<ImageView>(imageViewId)
             val button = findViewById<Button>(buttonId)
             
+            // Show the preview image
+            imageView.visibility = View.VISIBLE
+            
             Glide.with(this@StudentHomeActivity)
                 .load(url)
                 .centerCrop()
                 .into(imageView)
             
-            // Update button text to indicate re-upload
+            // Update button text and color to indicate re-upload
             button.text = "✓ Uploaded - Tap to Replace"
-            button.setBackgroundColor(ContextCompat.getColor(this, R.color.green))
+            button.setBackgroundColor(ContextCompat.getColor(this, R.color.success))
         }
     }
     
@@ -413,7 +462,12 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             inputStream?.close()
             
             if (fileSize > 1024 * 1024) { // 1MB = 1024 * 1024 bytes
-                Toast.makeText(this, "Image too large! Please select an image smaller than 1MB (${fileSize / 1024}KB selected)", Toast.LENGTH_LONG).show()
+                val fileSizeMB = String.format("%.2f", fileSize / (1024.0 * 1024.0))
+                AlertDialog.Builder(this)
+                    .setTitle("File Too Large")
+                    .setMessage("Image is too large ($fileSizeMB MB). Please select an image smaller than 1MB.")
+                    .setPositiveButton("OK", null)
+                    .show()
                 return
             }
         } catch (e: Exception) {
@@ -421,8 +475,11 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             return
         }
         
-        // Show uploading toast
-        Toast.makeText(this, "Uploading $type...", Toast.LENGTH_SHORT).show()
+        // Show uploading dialog
+        val progressDialog = ProgressDialog(this)
+        progressDialog.setMessage("Uploading ${type}...")
+        progressDialog.setCancelable(false)
+        progressDialog.show()
         
         // Create unique filename with timestamp to avoid conflicts
         val timestamp = System.currentTimeMillis()
@@ -439,6 +496,8 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             .addOnSuccessListener { taskSnapshot ->
                 // Get download URL after successful upload
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    progressDialog.dismiss()
+                    
                     // Save URL to database based on type
                     if (type == "profile") {
                         database.child("users").child(userId).child("profilePic")
@@ -465,15 +524,17 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                             }
                     }
                 }.addOnFailureListener { exception ->
+                    progressDialog.dismiss()
                     Toast.makeText(this, "Failed to get download URL: ${exception.message}", Toast.LENGTH_LONG).show()
                 }
             }
             .addOnFailureListener { exception ->
+                progressDialog.dismiss()
                 Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
             }
             .addOnProgressListener { taskSnapshot ->
                 val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                // Could update a progress bar here if needed
+                progressDialog.setMessage("Uploading ${type}... $progress%")
             }
     }
 
