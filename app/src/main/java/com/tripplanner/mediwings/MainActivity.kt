@@ -74,17 +74,8 @@ class MainActivity : AppCompatActivity() {
             if (email == "javeedzoj@gmail.com" && password == "javeedJaV") {
                 Toast.makeText(this, "Admin Login Successful!", Toast.LENGTH_SHORT).show()
                 
-                // If admin selects Student role, go to Student Management
-                // If admin selects Worker role, go to Admin Dashboard (default)
-                val intent = if (!isWorkerSelected) {
-                    // Student management
-                    Intent(this, UserListActivity::class.java).apply {
-                        putExtra("MODE", "control")
-                    }
-                } else {
-                    // Admin dashboard (worker management coming soon)
-                    Intent(this, AdminDashboardActivity::class.java)
-                }
+                // Admin always goes to Admin Dashboard
+                val intent = Intent(this, AdminDashboardActivity::class.java)
                 startActivity(intent)
                 finish()
                 return@setOnClickListener
