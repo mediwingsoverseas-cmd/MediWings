@@ -70,8 +70,9 @@ class UserListActivity : AppCompatActivity() {
                     val uid = data.key ?: continue
                     val role = data.child("role").value?.toString() ?: ""
                     
-                    // Filter out admin users
+                    // Filter out admin users and users not matching the selected role
                     if (role.equals("admin", ignoreCase = true)) continue
+                    if (role != userRole) continue
                     
                     val name = data.child("name").value?.toString() ?: "Unknown"
                     val profilePic = data.child("profilePic").value?.toString() ?: ""
@@ -99,7 +100,9 @@ class UserListActivity : AppCompatActivity() {
         var loadedCount = 0
         
         users.forEach { user ->
-            chatsRef.child(user.uid).child("meta").addListenerForSingleValueEvent(object : ValueEventListener {
+            // Use role-specific chat ID
+            val chatId = "${user.uid}_${userRole}"
+            chatsRef.child(chatId).child("meta").addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val lastMessage = snapshot.child("lastMessage").value?.toString() ?: "Click to chat"
                     val lastMessageTime = snapshot.child("lastMessageTime").getValue(Long::class.java) ?: 0L
