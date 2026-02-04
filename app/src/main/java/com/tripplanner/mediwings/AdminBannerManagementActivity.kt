@@ -1,7 +1,6 @@
 package com.tripplanner.mediwings
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -41,8 +40,6 @@ class AdminBannerManagementActivity : AppCompatActivity() {
     private lateinit var adapter: BannerAdapter
     private val storage = FirebaseStorage.getInstance()
     private val database = FirebaseDatabase.getInstance().reference.child("Banners")
-    
-    private var currentUploadUri: Uri? = null
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { uploadNewBanner(it) }
@@ -269,14 +266,14 @@ class AdminBannerManagementActivity : AppCompatActivity() {
                 .into(holder.ivBanner)
             
             holder.btnRemove.setOnClickListener {
-                val adapterPos = holder.bindingAdapterPosition
+                val adapterPos = holder.adapterPosition
                 if (adapterPos != RecyclerView.NO_POSITION) {
                     onRemove(adapterPos)
                 }
             }
             
             holder.btnView.setOnClickListener {
-                val adapterPos = holder.bindingAdapterPosition
+                val adapterPos = holder.adapterPosition
                 if (adapterPos != RecyclerView.NO_POSITION) {
                     onView(adapterPos)
                 }

@@ -175,7 +175,7 @@ class AdminEditContactActivity : AppCompatActivity() {
             holder.etPhone.setText(contact.phone)
             
             holder.btnRemove.setOnClickListener {
-                val adapterPos = holder.bindingAdapterPosition
+                val adapterPos = holder.adapterPosition
                 if (adapterPos != RecyclerView.NO_POSITION) {
                     onRemove(adapterPos)
                 }
