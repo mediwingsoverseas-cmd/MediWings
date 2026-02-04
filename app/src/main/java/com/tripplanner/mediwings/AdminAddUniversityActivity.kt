@@ -62,6 +62,21 @@ class AdminAddUniversityActivity : AppCompatActivity() {
             return
         }
 
+        // Check file size before uploading
+        try {
+            val inputStream = contentResolver.openInputStream(imageUri!!)
+            val fileSize = inputStream?.available() ?: 0
+            inputStream?.close()
+            
+            if (fileSize > 1024 * 1024) { // 1MB = 1024 * 1024 bytes
+                Toast.makeText(this, "Image too large! Please select an image smaller than 1MB (${fileSize / 1024}KB selected)", Toast.LENGTH_LONG).show()
+                return
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to check file size: ${e.message}", Toast.LENGTH_LONG).show()
+            return
+        }
+
         // Create unique filename with timestamp
         val timestamp = System.currentTimeMillis()
         val fileName = "university_${timestamp}.jpg"

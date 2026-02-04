@@ -100,11 +100,70 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     private fun loadCMSContent() {
         val webView = findViewById<WebView>(R.id.wvHomeContent)
+        webView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        webView.settings.defaultFontSize = 16
+        
         database.child("CMS").child("home_content").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     val content = snapshot.value.toString()
-                    val htmlData = "<html><body style='color:#333333;font-family:serif;line-height:1.6;background-color:transparent;'>$content</body></html>"
+                    // Modern, attractive styling with premium color scheme
+                    val htmlData = """
+                        <html>
+                        <head>
+                            <style>
+                                body {
+                                    font-family: 'Roboto', 'Arial', sans-serif;
+                                    line-height: 1.8;
+                                    color: #2C3E50;
+                                    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(240,240,245,0.95) 100%);
+                                    padding: 16px;
+                                    margin: 0;
+                                    border-radius: 12px;
+                                }
+                                h1, h2, h3 {
+                                    color: #1a237e;
+                                    font-weight: 600;
+                                    margin-top: 20px;
+                                    margin-bottom: 12px;
+                                }
+                                h1 { font-size: 24px; border-bottom: 3px solid #FFD700; padding-bottom: 8px; }
+                                h2 { font-size: 20px; }
+                                h3 { font-size: 18px; }
+                                p {
+                                    margin-bottom: 14px;
+                                    font-size: 15px;
+                                    text-align: justify;
+                                }
+                                ul, ol {
+                                    padding-left: 24px;
+                                    margin-bottom: 16px;
+                                }
+                                li {
+                                    margin-bottom: 8px;
+                                    font-size: 15px;
+                                }
+                                a {
+                                    color: #1a237e;
+                                    text-decoration: none;
+                                    font-weight: 500;
+                                }
+                                strong {
+                                    color: #1a237e;
+                                    font-weight: 600;
+                                }
+                                .highlight {
+                                    background-color: rgba(255, 215, 0, 0.2);
+                                    padding: 2px 6px;
+                                    border-radius: 4px;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            $content
+                        </body>
+                        </html>
+                    """.trimIndent()
                     webView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null)
                 }
             }
@@ -269,6 +328,20 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     }
 
     private fun setupDocUploads() {
+        // Load existing document previews
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            database.child("users").child(userId).child("documents").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    loadDocumentPreview(snapshot, "photos", R.id.ivPhotosPreview, R.id.btnUploadPhotos)
+                    loadDocumentPreview(snapshot, "aadhar", R.id.ivAadharPreview, R.id.btnUploadAadhar)
+                    loadDocumentPreview(snapshot, "passport", R.id.ivPassportPreview, R.id.btnUploadPassport)
+                    loadDocumentPreview(snapshot, "hiv", R.id.ivHIVPreview, R.id.btnUploadHIV)
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+        }
+        
         findViewById<Button>(R.id.btnUploadPhotos).setOnClickListener { 
             uploadType = "photos"
             checkPermissionAndPickImage()
@@ -284,6 +357,23 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         findViewById<Button>(R.id.btnUploadHIV).setOnClickListener { 
             uploadType = "hiv"
             checkPermissionAndPickImage()
+        }
+    }
+    
+    private fun loadDocumentPreview(snapshot: DataSnapshot, docType: String, imageViewId: Int, buttonId: Int) {
+        val url = snapshot.child(docType).value?.toString()
+        if (!url.isNullOrEmpty()) {
+            val imageView = findViewById<ImageView>(imageViewId)
+            val button = findViewById<Button>(buttonId)
+            
+            Glide.with(this@StudentHomeActivity)
+                .load(url)
+                .centerCrop()
+                .into(imageView)
+            
+            // Update button text to indicate re-upload
+            button.text = "✓ Uploaded - Tap to Replace"
+            button.setBackgroundColor(ContextCompat.getColor(this, R.color.green))
         }
     }
     
@@ -315,6 +405,21 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     private fun uploadImage(uri: Uri, type: String) {
         val userId = auth.currentUser?.uid ?: return
+        
+        // Check file size before uploading
+        try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val fileSize = inputStream?.available() ?: 0
+            inputStream?.close()
+            
+            if (fileSize > 1024 * 1024) { // 1MB = 1024 * 1024 bytes
+                Toast.makeText(this, "Image too large! Please select an image smaller than 1MB (${fileSize / 1024}KB selected)", Toast.LENGTH_LONG).show()
+                return
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to check file size: ${e.message}", Toast.LENGTH_LONG).show()
+            return
+        }
         
         // Show uploading toast
         Toast.makeText(this, "Uploading $type...", Toast.LENGTH_SHORT).show()
@@ -459,6 +564,9 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.nav_home -> {
+                // Already on home, just close drawer
+            }
             R.id.nav_chat -> startActivity(Intent(this, ChatActivity::class.java))
             R.id.nav_contact -> startActivity(Intent(this, ContactActivity::class.java))
             R.id.nav_logout -> {
