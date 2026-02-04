@@ -13,6 +13,7 @@ class RegisterActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
+    private var isWorkerSelected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +35,25 @@ class RegisterActivity : AppCompatActivity() {
         val etMobile = findViewById<EditText>(R.id.etMobile)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
         val tvLoginLink = findViewById<TextView>(R.id.tvLoginLink)
+        val btnRoleStudent = findViewById<Button>(R.id.btnRoleStudent)
+        val btnRoleWorker = findViewById<Button>(R.id.btnRoleWorker)
+        
+        // Toggle button behavior - Student is selected by default
+        btnRoleStudent.setOnClickListener {
+            isWorkerSelected = false
+            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
+            btnRoleStudent.setTextColor(getColor(R.color.white))
+            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
+            btnRoleWorker.setTextColor(getColor(R.color.white))
+        }
+        
+        btnRoleWorker.setOnClickListener {
+            isWorkerSelected = true
+            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button_selected))
+            btnRoleWorker.setTextColor(getColor(R.color.white))
+            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button))
+            btnRoleStudent.setTextColor(getColor(R.color.white))
+        }
 
         btnRegister.setOnClickListener {
             val name = etName.text.toString().trim()
@@ -58,11 +78,13 @@ class RegisterActivity : AppCompatActivity() {
                         val userId = user?.uid
 
                         if (userId != null) {
-                            val userRef = database.reference.child("users").child(userId)
+                            val userType = if (isWorkerSelected) "workers" else "users"
+                            val userRef = database.reference.child(userType).child(userId)
                             val userData = hashMapOf(
                                 "name" to name,
                                 "email" to email,
-                                "mobile" to mobile
+                                "mobile" to mobile,
+                                "role" to if (isWorkerSelected) "worker" else "student"
                             )
                             userRef.setValue(userData)
                                 .addOnCompleteListener { dbTask ->

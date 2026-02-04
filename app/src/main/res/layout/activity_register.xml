@@ -83,7 +83,54 @@
         android:background="@drawable/edit_text_background"
         android:textColor="@color/text_primary"
         android:textColorHint="@color/text_secondary"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Register As"
+        android:textColor="@color/gold_premium"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="24dp">
+
+        <Button
+            android:id="@+id/btnRoleStudent"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:text="STUDENT"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/student_button"
+            android:textColor="@color/white"
+            android:layout_marginEnd="8dp"
+            app:icon="@drawable/ic_student"
+            app:iconTint="@color/white"
+            style="@style/Widget.Material3.Button"/>
+
+        <Button
+            android:id="@+id/btnRoleWorker"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:text="WORKER"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/worker_button"
+            android:textColor="@color/white"
+            app:icon="@drawable/ic_worker"
+            app:iconTint="@color/white"
+            style="@style/Widget.Material3.Button"/>
+
+    </LinearLayout>
 
     <Button
         android:id="@+id/btnRegister"
