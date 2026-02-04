@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Banner ID -->
+        <TextView
+            android:id="@+id/tvBannerId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Banner 1"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_premium"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Banner Image Preview -->
+        <ImageView
+            android:id="@+id/ivBanner"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:scaleType="centerCrop"
+            android:background="@color/background_light"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="Banner Preview"/>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/btnViewBanner"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="VIEW"
+                android:textSize="12sp"
+                android:backgroundTint="@color/secondary_premium"
+                android:textColor="@color/white"
+                android:layout_marginEnd="8dp"
+                style="?android:attr/buttonBarButtonStyle"/>
+
+            <Button
+                android:id="@+id/btnRemoveBanner"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="REMOVE"
+                android:textSize="12sp"
+                android:backgroundTint="@color/error"
+                android:textColor="@color/white"
+                style="?android:attr/buttonBarButtonStyle"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

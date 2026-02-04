@@ -1,47 +1,25 @@
 package com.tripplanner.mediwings
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.FirebaseStorage
 import jp.wasabeef.richeditor.RichEditor
 
 class AdminDashboardActivity : AppCompatActivity() {
 
-    private var currentBannerId = 0
     private lateinit var richEditor: RichEditor
-    private val storage = FirebaseStorage.getInstance()
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
-
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { uploadBannerToFirebase(it) }
-    }
-    
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-        if (isGranted) {
-            // Permission granted, proceed with image picker
-            pickImageLauncher.launch("image/*")
-        } else {
-            Toast.makeText(this, "Permission denied. Cannot upload banners.", Toast.LENGTH_LONG).show()
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,19 +56,8 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, AdminEditContactActivity::class.java))
         }
 
-        findViewById<Button>(R.id.btnUploadBanner1).setOnClickListener {
-            currentBannerId = 1
-            checkPermissionAndPickImage()
-        }
-
-        findViewById<Button>(R.id.btnUploadBanner2).setOnClickListener {
-            currentBannerId = 2
-            checkPermissionAndPickImage()
-        }
-
-        findViewById<Button>(R.id.btnUploadBanner3).setOnClickListener {
-            currentBannerId = 3
-            checkPermissionAndPickImage()
+        findViewById<Button>(R.id.btnManageBanners).setOnClickListener {
+            startActivity(Intent(this, AdminBannerManagementActivity::class.java))
         }
 
         // Rich text formatting buttons
@@ -157,63 +124,6 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun uploadBannerToFirebase(fileUri: Uri) {
-        Toast.makeText(this, "Uploading Banner $currentBannerId...", Toast.LENGTH_SHORT).show()
-        
-        val timestamp = System.currentTimeMillis()
-        val storageRef = storage.reference
-            .child("banners")
-            .child("banner_${currentBannerId}_${timestamp}.jpg")
-
-        storageRef.putFile(fileUri)
-            .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    saveBannerUrlToDatabase(downloadUri.toString())
-                }.addOnFailureListener { exception ->
-                    Toast.makeText(this, "Failed to get download URL: ${exception.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-            .addOnFailureListener { exception ->
-                Toast.makeText(this, "Upload Failed: ${exception.message}", Toast.LENGTH_LONG).show()
-            }
-    }
-
-    private fun saveBannerUrlToDatabase(url: String) {
-        database.reference.child("Banners").child("banner$currentBannerId").setValue(url)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Banner $currentBannerId Saved!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener { exception ->
-                Toast.makeText(this, "Failed to save banner: ${exception.message}", Toast.LENGTH_LONG).show()
-            }
-    }
-    
-    private fun checkPermissionAndPickImage() {
-        // For Android 13+ (API 33/TIRAMISU and higher), use READ_MEDIA_IMAGES
-        // For older versions (API 32 and below), use READ_EXTERNAL_STORAGE
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        }
-        
-        when {
-            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
-                // Permission already granted
-                pickImageLauncher.launch("image/*")
-            }
-            shouldShowRequestPermissionRationale(permission) -> {
-                // Show explanation why permission is needed
-                Toast.makeText(this, "Permission needed to upload banners", Toast.LENGTH_LONG).show()
-                requestPermissionLauncher.launch(permission)
-            }
-            else -> {
-                // Request permission
-                requestPermissionLauncher.launch(permission)
-            }
-        }
-    }
-    
     private fun loadDashboardStats() {
         val tvTotalStudents = findViewById<TextView>(R.id.tvTotalStudents)
         val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
