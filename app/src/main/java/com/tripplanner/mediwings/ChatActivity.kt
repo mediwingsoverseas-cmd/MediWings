@@ -234,10 +234,15 @@ class ChatActivity : AppCompatActivity() {
     
     private fun sendTextMessage(text: String, messagesRef: DatabaseReference) {
         val messageId = messagesRef.push().key ?: return
+        val senderName = when {
+            currentUserName.isNotEmpty() -> currentUserName
+            isAdmin -> "Admin"
+            else -> "Unknown User"
+        }
         val msg = Message(
             id = messageId,
             senderId = currentUserId,
-            senderName = currentUserName.ifEmpty { if (isAdmin) "Admin" else "User" },
+            senderName = senderName,
             message = text,
             timestamp = System.currentTimeMillis()
         )
@@ -262,10 +267,15 @@ class ChatActivity : AppCompatActivity() {
     private fun sendMediaMessage(mediaUrl: String, mediaType: String, messagesRef: DatabaseReference) {
         val messageId = messagesRef.push().key ?: return
         val displayText = if (mediaType == "image") "📷 Photo" else "📎 File"
+        val senderName = when {
+            currentUserName.isNotEmpty() -> currentUserName
+            isAdmin -> "Admin"
+            else -> "Unknown User"
+        }
         val msg = Message(
             id = messageId,
             senderId = currentUserId,
-            senderName = currentUserName.ifEmpty { if (isAdmin) "Admin" else "User" },
+            senderName = senderName,
             message = displayText,
             timestamp = System.currentTimeMillis(),
             mediaUrl = mediaUrl,

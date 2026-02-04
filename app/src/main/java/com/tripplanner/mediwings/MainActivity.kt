@@ -146,31 +146,35 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun animateTitleChange(tvAppName: TextView, tvTagline: TextView, newTitle: String, newTagline: String, isLeftToRight: Boolean) {
-        val startTranslation = if (isLeftToRight) -tvAppName.width.toFloat() else tvAppName.width.toFloat()
-        
-        // Slide out
-        val slideOut1 = ObjectAnimator.ofFloat(tvAppName, View.TRANSLATION_X, 0f, -startTranslation)
-        val slideOut2 = ObjectAnimator.ofFloat(tvTagline, View.TRANSLATION_X, 0f, -startTranslation)
-        slideOut1.duration = 200
-        slideOut2.duration = 200
-        
-        slideOut1.start()
-        slideOut2.start()
-        
-        // Change text and slide in
-        tvAppName.postDelayed({
-            tvAppName.text = newTitle
-            tvTagline.text = newTagline
-            tvAppName.translationX = startTranslation
-            tvTagline.translationX = startTranslation
+        // Use post to ensure view is measured before animation
+        tvAppName.post {
+            val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+            val startTranslation = if (isLeftToRight) -screenWidth else screenWidth
             
-            val slideIn1 = ObjectAnimator.ofFloat(tvAppName, View.TRANSLATION_X, startTranslation, 0f)
-            val slideIn2 = ObjectAnimator.ofFloat(tvTagline, View.TRANSLATION_X, startTranslation, 0f)
-            slideIn1.duration = 200
-            slideIn2.duration = 200
+            // Slide out
+            val slideOut1 = ObjectAnimator.ofFloat(tvAppName, View.TRANSLATION_X, 0f, -startTranslation)
+            val slideOut2 = ObjectAnimator.ofFloat(tvTagline, View.TRANSLATION_X, 0f, -startTranslation)
+            slideOut1.duration = 200
+            slideOut2.duration = 200
             
-            slideIn1.start()
-            slideIn2.start()
-        }, 200)
+            slideOut1.start()
+            slideOut2.start()
+            
+            // Change text and slide in
+            tvAppName.postDelayed({
+                tvAppName.text = newTitle
+                tvTagline.text = newTagline
+                tvAppName.translationX = startTranslation
+                tvTagline.translationX = startTranslation
+                
+                val slideIn1 = ObjectAnimator.ofFloat(tvAppName, View.TRANSLATION_X, startTranslation, 0f)
+                val slideIn2 = ObjectAnimator.ofFloat(tvTagline, View.TRANSLATION_X, startTranslation, 0f)
+                slideIn1.duration = 200
+                slideIn2.duration = 200
+                
+                slideIn1.start()
+                slideIn2.start()
+            }, 200)
+        }
     }
 }
