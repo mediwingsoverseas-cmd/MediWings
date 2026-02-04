@@ -71,7 +71,7 @@ class ChatActivity : AppCompatActivity() {
         if (isAdmin) {
             val userId = intent.getStringExtra("USER_ID")
             if (userId.isNullOrEmpty()) {
-                Toast.makeText(this, "Invalid chat session", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Cannot start chat: No user selected", Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
