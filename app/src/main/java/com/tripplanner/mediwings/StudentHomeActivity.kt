@@ -328,6 +328,20 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     }
 
     private fun setupDocUploads() {
+        // Load existing document previews
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            database.child("users").child(userId).child("documents").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    loadDocumentPreview(snapshot, "photos", R.id.ivPhotosPreview, R.id.btnUploadPhotos)
+                    loadDocumentPreview(snapshot, "aadhar", R.id.ivAadharPreview, R.id.btnUploadAadhar)
+                    loadDocumentPreview(snapshot, "passport", R.id.ivPassportPreview, R.id.btnUploadPassport)
+                    loadDocumentPreview(snapshot, "hiv", R.id.ivHIVPreview, R.id.btnUploadHIV)
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+        }
+        
         findViewById<Button>(R.id.btnUploadPhotos).setOnClickListener { 
             uploadType = "photos"
             checkPermissionAndPickImage()
@@ -343,6 +357,23 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         findViewById<Button>(R.id.btnUploadHIV).setOnClickListener { 
             uploadType = "hiv"
             checkPermissionAndPickImage()
+        }
+    }
+    
+    private fun loadDocumentPreview(snapshot: DataSnapshot, docType: String, imageViewId: Int, buttonId: Int) {
+        val url = snapshot.child(docType).value?.toString()
+        if (!url.isNullOrEmpty()) {
+            val imageView = findViewById<ImageView>(imageViewId)
+            val button = findViewById<Button>(buttonId)
+            
+            Glide.with(this@StudentHomeActivity)
+                .load(url)
+                .centerCrop()
+                .into(imageView)
+            
+            // Update button text to indicate re-upload
+            button.text = "✓ Uploaded - Tap to Replace"
+            button.setBackgroundColor(ContextCompat.getColor(this, R.color.green))
         }
     }
     
