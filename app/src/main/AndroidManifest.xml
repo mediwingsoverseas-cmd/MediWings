@@ -19,6 +19,7 @@
         <activity android:name=".RegisterActivity" />
         <activity android:name=".StudentHomeActivity" />
         <activity android:name=".WorkerActivity" />
+        <activity android:name=".WorkerHomeActivity" />
         <activity android:name=".AdminDashboardActivity" />
         <activity android:name=".ChatActivity" />
         <activity android:name=".UserListActivity" />
