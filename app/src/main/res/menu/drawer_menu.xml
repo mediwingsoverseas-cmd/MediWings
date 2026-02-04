@@ -2,17 +2,22 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home"
         android:title="Home" />
     <item
         android:id="@+id/nav_chat"
-        android:title="Online Chat" />
+        android:icon="@drawable/ic_messages"
+        android:title="Chat with Admin" />
     <item
         android:id="@+id/nav_contact"
+        android:icon="@android:drawable/ic_menu_info_details"
         android:title="Contact" />
     <item
         android:id="@+id/nav_switch_worker"
+        android:icon="@android:drawable/ic_menu_revert"
         android:title="Switch to Worker" />
     <item
         android:id="@+id/nav_logout"
+        android:icon="@android:drawable/ic_lock_power_off"
         android:title="Logout" />
 </menu>
