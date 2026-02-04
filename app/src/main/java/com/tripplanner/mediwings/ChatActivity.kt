@@ -67,17 +67,26 @@ class ChatActivity : AppCompatActivity() {
         
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
         
-        // For admin, use "admin" as the user ID since they may not be Firebase authenticated
-        currentUserId = if (isAdmin) {
-            "admin"
-        } else {
-            auth.currentUser?.uid ?: run {
+        // Validate admin access - admin must have both IS_ADMIN flag and valid USER_ID to chat
+        if (isAdmin) {
+            val userId = intent.getStringExtra("USER_ID")
+            if (userId.isNullOrEmpty()) {
+                Toast.makeText(this, "Invalid chat session", Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
+            // For admin, use "admin" as sender ID to identify admin messages
+            currentUserId = "admin"
+            chatId = userId
+        } else {
+            // For students, require Firebase authentication
+            currentUserId = auth.currentUser?.uid ?: run {
+                finish()
+                return
+            }
+            chatId = intent.getStringExtra("USER_ID") ?: currentUserId
         }
         
-        chatId = intent.getStringExtra("USER_ID") ?: currentUserId
         otherUserName = intent.getStringExtra("USER_NAME") ?: "Support"
 
         database = FirebaseDatabase.getInstance().reference
