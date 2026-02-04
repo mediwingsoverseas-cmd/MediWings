@@ -81,6 +81,7 @@ class StudentActivity : AppCompatActivity(), NavigationView.OnNavigationItemSele
             }
             R.id.nav_chat -> {
                 val intent = Intent(this, ChatActivity::class.java)
+                intent.putExtra("USER_ROLE", "student")
                 startActivity(intent)
             }
             R.id.nav_contact -> startActivity(Intent(this, ContactActivity::class.java))

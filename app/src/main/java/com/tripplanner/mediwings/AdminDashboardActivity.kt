@@ -21,10 +21,13 @@ class AdminDashboardActivity : AppCompatActivity() {
     private lateinit var richEditor: RichEditor
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private var adminMode: String = "student" // "student" or "worker"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_dashboard)
+        
+        adminMode = intent.getStringExtra("ADMIN_MODE") ?: "student"
 
         richEditor = findViewById(R.id.richEditor)
         
@@ -36,18 +39,27 @@ class AdminDashboardActivity : AppCompatActivity() {
         richEditor.setInputEnabled(true)
         richEditor.focusEditor()
         
+        // Set title based on admin mode
+        supportActionBar?.title = if (adminMode == "worker") "Worker Admin Dashboard" else "Student Admin Dashboard"
+        
+        // Update button labels based on mode
+        val btnAdminStudents = findViewById<Button>(R.id.btnAdminStudents)
+        btnAdminStudents.text = if (adminMode == "worker") "WORKERS" else "STUDENTS"
+        
         // Load dashboard stats
         loadDashboardStats()
 
-        findViewById<Button>(R.id.btnAdminStudents).setOnClickListener {
+        btnAdminStudents.setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
             intent.putExtra("MODE", "control")
+            intent.putExtra("ROLE", adminMode)
             startActivity(intent)
         }
 
         findViewById<Button>(R.id.btnAdminMessages).setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
             intent.putExtra("MODE", "chat")
+            intent.putExtra("ROLE", adminMode)
             startActivity(intent)
         }
 
@@ -131,25 +143,32 @@ class AdminDashboardActivity : AppCompatActivity() {
         val tvTotalStudents = findViewById<TextView>(R.id.tvTotalStudents)
         val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
         
-        // Count total students (single read)
+        // Count total users based on admin mode (single read)
         database.reference.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                var studentCount = 0
+                var userCount = 0
                 for (userSnapshot in snapshot.children) {
                     val role = userSnapshot.child("role").value?.toString()
-                    if (role == "student") {
-                        studentCount++
+                    if (role == adminMode) {
+                        userCount++
                     }
                 }
-                tvTotalStudents.text = studentCount.toString()
+                tvTotalStudents.text = userCount.toString()
             }
             override fun onCancelled(error: DatabaseError) {}
         })
         
-        // Count active chats (single read)
+        // Count active chats for this role (single read)
         database.reference.child("Chats").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val chatCount = snapshot.childrenCount.toInt()
+                var chatCount = 0
+                for (chatSnapshot in snapshot.children) {
+                    val chatId = chatSnapshot.key ?: continue
+                    // Check if chat ID ends with the current admin mode (role)
+                    if (chatId.endsWith("_$adminMode")) {
+                        chatCount++
+                    }
+                }
                 tvActiveChats.text = chatCount.toString()
             }
             override fun onCancelled(error: DatabaseError) {}
