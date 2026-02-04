@@ -64,12 +64,19 @@ class ChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_chat)
 
         auth = FirebaseAuth.getInstance()
-        currentUserId = auth.currentUser?.uid ?: run {
-            finish()
-            return
-        }
         
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
+        
+        // For admin, use "admin" as the user ID since they may not be Firebase authenticated
+        currentUserId = if (isAdmin) {
+            "admin"
+        } else {
+            auth.currentUser?.uid ?: run {
+                finish()
+                return
+            }
+        }
+        
         chatId = intent.getStringExtra("USER_ID") ?: currentUserId
         otherUserName = intent.getStringExtra("USER_NAME") ?: "Support"
 
