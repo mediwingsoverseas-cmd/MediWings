@@ -1,7 +1,9 @@
 package com.tripplanner.mediwings
 
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -41,24 +43,48 @@ class MainActivity : AppCompatActivity() {
         val tvRegister = findViewById<TextView>(R.id.tvRegister)
         val btnRoleStudent = findViewById<Button>(R.id.btnRoleStudent)
         val btnRoleWorker = findViewById<Button>(R.id.btnRoleWorker)
+        val tvAppName = findViewById<TextView>(R.id.tvAppName)
+        val tvTagline = findViewById<TextView>(R.id.tvTagline)
         
         var isWorkerSelected = false
         
+        // Initialize Student button as selected by default
+        btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
+        btnRoleStudent.setTextColor(getColor(R.color.white))
+        btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
+        btnRoleWorker.setTextColor(getColor(R.color.white))
+        
+        // Set initial title for Student
+        tvAppName.text = "MediWings Student Portal"
+        tvTagline.text = "Your Gateway to Medical Education Abroad"
+        
         // Toggle button behavior - Student is selected by default
         btnRoleStudent.setOnClickListener {
-            isWorkerSelected = false
-            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
-            btnRoleStudent.setTextColor(getColor(R.color.white))
-            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
-            btnRoleWorker.setTextColor(getColor(R.color.white))
+            if (isWorkerSelected) {
+                isWorkerSelected = false
+                btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
+                btnRoleStudent.setTextColor(getColor(R.color.white))
+                btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
+                btnRoleWorker.setTextColor(getColor(R.color.white))
+                
+                // Animate title sliding from left to right
+                animateTitleChange(tvAppName, tvTagline, "MediWings Student Portal", 
+                    "Your Gateway to Medical Education Abroad", true)
+            }
         }
         
         btnRoleWorker.setOnClickListener {
-            isWorkerSelected = true
-            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button_selected))
-            btnRoleWorker.setTextColor(getColor(R.color.white))
-            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button))
-            btnRoleStudent.setTextColor(getColor(R.color.white))
+            if (!isWorkerSelected) {
+                isWorkerSelected = true
+                btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button_selected))
+                btnRoleWorker.setTextColor(getColor(R.color.white))
+                btnRoleStudent.setBackgroundColor(getColor(R.color.student_button))
+                btnRoleStudent.setTextColor(getColor(R.color.white))
+                
+                // Animate title sliding from right to left
+                animateTitleChange(tvAppName, tvTagline, "MediWings Worker Portal", 
+                    "Professional Opportunities Await You", false)
+            }
         }
 
         btnLogin.setOnClickListener {
@@ -72,12 +98,23 @@ class MainActivity : AppCompatActivity() {
 
             // Hardcoded Admin Login
             if (email == "javeedzoj@gmail.com" && password == "javeedJaV") {
-                Toast.makeText(this, "Admin Login Successful!", Toast.LENGTH_SHORT).show()
-                
-                // Admin always goes to Admin Dashboard
-                val intent = Intent(this, AdminDashboardActivity::class.java)
-                startActivity(intent)
-                finish()
+                // Show dialog for admin to select Student or Worker admin mode
+                val options = arrayOf("Student Admin", "Worker Admin")
+                val builder = android.app.AlertDialog.Builder(this)
+                builder.setTitle("Select Admin Mode")
+                builder.setItems(options) { dialog, which ->
+                    val adminMode = if (which == 0) "student" else "worker"
+                    Toast.makeText(this, "Admin Login Successful!", Toast.LENGTH_SHORT).show()
+                    
+                    val intent = Intent(this, AdminDashboardActivity::class.java)
+                    intent.putExtra("ADMIN_MODE", adminMode)
+                    startActivity(intent)
+                    finish()
+                }
+                builder.setOnCancelListener {
+                    // User cancelled, do nothing
+                }
+                builder.show()
                 return@setOnClickListener
             }
 
@@ -106,5 +143,34 @@ class MainActivity : AppCompatActivity() {
         tvRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+    }
+    
+    private fun animateTitleChange(tvAppName: TextView, tvTagline: TextView, newTitle: String, newTagline: String, isLeftToRight: Boolean) {
+        val startTranslation = if (isLeftToRight) -tvAppName.width.toFloat() else tvAppName.width.toFloat()
+        
+        // Slide out
+        val slideOut1 = ObjectAnimator.ofFloat(tvAppName, View.TRANSLATION_X, 0f, -startTranslation)
+        val slideOut2 = ObjectAnimator.ofFloat(tvTagline, View.TRANSLATION_X, 0f, -startTranslation)
+        slideOut1.duration = 200
+        slideOut2.duration = 200
+        
+        slideOut1.start()
+        slideOut2.start()
+        
+        // Change text and slide in
+        tvAppName.postDelayed({
+            tvAppName.text = newTitle
+            tvTagline.text = newTagline
+            tvAppName.translationX = startTranslation
+            tvTagline.translationX = startTranslation
+            
+            val slideIn1 = ObjectAnimator.ofFloat(tvAppName, View.TRANSLATION_X, startTranslation, 0f)
+            val slideIn2 = ObjectAnimator.ofFloat(tvTagline, View.TRANSLATION_X, startTranslation, 0f)
+            slideIn1.duration = 200
+            slideIn2.duration = 200
+            
+            slideIn1.start()
+            slideIn2.start()
+        }, 200)
     }
 }

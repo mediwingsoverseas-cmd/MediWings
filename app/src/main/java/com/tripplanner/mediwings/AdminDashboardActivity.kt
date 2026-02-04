@@ -21,10 +21,13 @@ class AdminDashboardActivity : AppCompatActivity() {
     private lateinit var richEditor: RichEditor
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private var adminMode: String = "student" // "student" or "worker"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_dashboard)
+        
+        adminMode = intent.getStringExtra("ADMIN_MODE") ?: "student"
 
         richEditor = findViewById(R.id.richEditor)
         
@@ -36,18 +39,23 @@ class AdminDashboardActivity : AppCompatActivity() {
         richEditor.setInputEnabled(true)
         richEditor.focusEditor()
         
+        // Set title based on admin mode
+        supportActionBar?.title = if (adminMode == "worker") "Worker Admin Dashboard" else "Student Admin Dashboard"
+        
         // Load dashboard stats
         loadDashboardStats()
 
         findViewById<Button>(R.id.btnAdminStudents).setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
             intent.putExtra("MODE", "control")
+            intent.putExtra("ROLE", adminMode)
             startActivity(intent)
         }
 
         findViewById<Button>(R.id.btnAdminMessages).setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
             intent.putExtra("MODE", "chat")
+            intent.putExtra("ROLE", adminMode)
             startActivity(intent)
         }
 

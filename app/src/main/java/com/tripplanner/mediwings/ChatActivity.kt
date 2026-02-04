@@ -64,6 +64,8 @@ class ChatActivity : AppCompatActivity() {
     private var otherUserName: String? = null
     private var currentUserId: String = ""
     private var isAdmin: Boolean = false
+    private var userRole: String = "student" // "student" or "worker"
+    private var currentUserName: String = ""
     
     private var messagesListener: ValueEventListener? = null
     private var metaListener: ValueEventListener? = null
@@ -90,6 +92,7 @@ class ChatActivity : AppCompatActivity() {
         storage = FirebaseStorage.getInstance()
         
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
+        userRole = intent.getStringExtra("USER_ROLE") ?: "student" // Get user role from intent
         
         // Validate admin access - admin must have both IS_ADMIN flag and valid USER_ID to chat
         if (isAdmin) {
@@ -101,14 +104,21 @@ class ChatActivity : AppCompatActivity() {
             }
             // For admin, use "admin" as sender ID to identify admin messages
             currentUserId = "admin"
-            chatId = userId
+            currentUserName = "Admin"
+            // Include role in chatId for role-based separation: userId_role
+            chatId = "${userId}_${userRole}"
         } else {
-            // For students, require Firebase authentication
+            // For students/workers, require Firebase authentication
             currentUserId = auth.currentUser?.uid ?: run {
                 finish()
                 return
             }
-            chatId = intent.getStringExtra("USER_ID") ?: currentUserId
+            val userId = intent.getStringExtra("USER_ID") ?: currentUserId
+            // Include role in chatId for role-based separation: userId_role
+            chatId = "${userId}_${userRole}"
+            
+            // Fetch current user's name from database
+            fetchCurrentUserName()
         }
         
         otherUserName = intent.getStringExtra("USER_NAME") ?: "Support"
@@ -227,7 +237,7 @@ class ChatActivity : AppCompatActivity() {
         val msg = Message(
             id = messageId,
             senderId = currentUserId,
-            senderName = if (isAdmin) "Admin" else "Student",
+            senderName = currentUserName.ifEmpty { if (isAdmin) "Admin" else "User" },
             message = text,
             timestamp = System.currentTimeMillis()
         )
@@ -255,7 +265,7 @@ class ChatActivity : AppCompatActivity() {
         val msg = Message(
             id = messageId,
             senderId = currentUserId,
-            senderName = if (isAdmin) "Admin" else "Student",
+            senderName = currentUserName.ifEmpty { if (isAdmin) "Admin" else "User" },
             message = displayText,
             timestamp = System.currentTimeMillis(),
             mediaUrl = mediaUrl,
@@ -385,6 +395,18 @@ class ChatActivity : AppCompatActivity() {
     private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    }
+    
+    private fun fetchCurrentUserName() {
+        database.child("users").child(currentUserId).child("name")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    currentUserName = snapshot.value?.toString() ?: ""
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    currentUserName = ""
+                }
+            })
     }
 
     override fun onDestroy() {
