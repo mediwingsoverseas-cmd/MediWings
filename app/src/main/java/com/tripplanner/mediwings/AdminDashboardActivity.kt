@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
@@ -19,11 +20,12 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
+import jp.wasabeef.richeditor.RichEditor
 
 class AdminDashboardActivity : AppCompatActivity() {
 
     private var currentBannerId = 0
-    private lateinit var etHomeContent: EditText
+    private lateinit var richEditor: RichEditor
     private val storage = FirebaseStorage.getInstance()
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
@@ -45,7 +47,13 @@ class AdminDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_dashboard)
 
-        etHomeContent = findViewById(R.id.etHomeContent)
+        richEditor = findViewById(R.id.richEditor)
+        
+        // Configure RichEditor
+        richEditor.setEditorHeight(200)
+        richEditor.setEditorFontSize(16)
+        richEditor.setPadding(10, 10, 10, 10)
+        richEditor.setPlaceholder("Enter content here...")
         
         // Load dashboard stats
         loadDashboardStats()
@@ -85,20 +93,45 @@ class AdminDashboardActivity : AppCompatActivity() {
             checkPermissionAndPickImage()
         }
 
-        findViewById<Button>(R.id.btnInsertBold).setOnClickListener {
-            val start = etHomeContent.selectionStart
-            val end = etHomeContent.selectionEnd
-            etHomeContent.text.insert(start, "<b>")
-            etHomeContent.text.insert(end + 3, "</b>")
+        // Rich text formatting buttons
+        findViewById<Button>(R.id.btnBold).setOnClickListener {
+            richEditor.setBold()
+        }
+
+        findViewById<Button>(R.id.btnItalic).setOnClickListener {
+            richEditor.setItalic()
+        }
+
+        findViewById<Button>(R.id.btnUnderline).setOnClickListener {
+            richEditor.setUnderline()
+        }
+
+        findViewById<Button>(R.id.btnH1).setOnClickListener {
+            richEditor.setHeading(1)
+        }
+
+        findViewById<Button>(R.id.btnH2).setOnClickListener {
+            richEditor.setHeading(2)
+        }
+
+        findViewById<Button>(R.id.btnBullets).setOnClickListener {
+            richEditor.setBullets()
+        }
+
+        findViewById<Button>(R.id.btnNumbers).setOnClickListener {
+            richEditor.setNumbers()
         }
 
         findViewById<Button>(R.id.btnInsertImage).setOnClickListener {
-            val start = etHomeContent.selectionStart
-            etHomeContent.text.insert(start, "<img src=\"URL_HERE\" width=\"100%\">")
+            showImageUrlDialog()
+        }
+
+        findViewById<Button>(R.id.btnInsertLink).setOnClickListener {
+            showLinkDialog()
         }
 
         findViewById<Button>(R.id.btnSaveCMS).setOnClickListener {
-            val content = etHomeContent.text.toString()
+            val content = richEditor.html ?: ""
             if (content.isNotEmpty()) {
                 database.reference.child("CMS").child("home_content").setValue(content)
                     .addOnSuccessListener {
@@ -107,9 +140,10 @@ class AdminDashboardActivity : AppCompatActivity() {
             }
         }
 
+        // Load existing content
         database.reference.child("CMS").child("home_content").get().addOnSuccessListener {
             if (it.exists()) {
-                etHomeContent.setText(it.value.toString())
+                richEditor.html = it.value.toString()
             }
         }
         
@@ -207,5 +241,60 @@ class AdminDashboardActivity : AppCompatActivity() {
             }
             override fun onCancelled(error: DatabaseError) {}
         })
+    }
+    
+    private fun showImageUrlDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Insert Image")
+        
+        val input = EditText(this)
+        input.hint = "Enter image URL"
+        builder.setView(input)
+        
+        builder.setPositiveButton("Insert") { dialog, _ ->
+            val url = input.text.toString()
+            if (url.isNotEmpty()) {
+                richEditor.insertImage(url, "image", 320)
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.cancel()
+        }
+        
+        builder.show()
+    }
+    
+    private fun showLinkDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Insert Link")
+        
+        val container = android.widget.LinearLayout(this)
+        container.orientation = android.widget.LinearLayout.VERTICAL
+        container.setPadding(50, 20, 50, 20)
+        
+        val urlInput = EditText(this)
+        urlInput.hint = "Enter URL"
+        container.addView(urlInput)
+        
+        val textInput = EditText(this)
+        textInput.hint = "Enter link text"
+        container.addView(textInput)
+        
+        builder.setView(container)
+        
+        builder.setPositiveButton("Insert") { dialog, _ ->
+            val url = urlInput.text.toString()
+            val text = textInput.text.toString()
+            if (url.isNotEmpty() && text.isNotEmpty()) {
+                richEditor.insertLink(url, text)
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.cancel()
+        }
+        
+        builder.show()
     }
 }

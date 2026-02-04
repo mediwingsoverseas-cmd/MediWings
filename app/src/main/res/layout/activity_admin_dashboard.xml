@@ -358,49 +358,132 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="(HTML Supported)"
+                        android:text="(WYSIWYG Editor)"
                         android:textColor="@color/gray"
                         android:textSize="12sp"
-                        android:layout_marginBottom="16dp"/>
+                        android:layout_marginBottom="12dp"/>
 
-                    <LinearLayout
+                    <!-- Rich Text Toolbar -->
+                    <HorizontalScrollView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                        android:scrollbars="none"
                         android:layout_marginBottom="8dp">
                         
-                        <Button
-                            android:id="@+id/btnInsertImage"
+                        <LinearLayout
                             android:layout_width="wrap_content"
-                            android:layout_height="40dp"
-                            android:text="IMG URL"
-                            android:textSize="11sp"
-                            android:backgroundTint="@color/secondary_premium"
-                            android:textColor="@color/white"
-                            android:layout_marginEnd="8dp"
-                            style="?android:attr/buttonBarButtonStyle"/>
-                        
-                        <Button
-                            android:id="@+id/btnInsertBold"
-                            android:layout_width="wrap_content"
-                            android:layout_height="40dp"
-                            android:text="&lt;b&gt;"
-                            android:textSize="11sp"
-                            android:backgroundTint="@color/secondary_premium"
-                            android:textColor="@color/white"
-                            style="?android:attr/buttonBarButtonStyle"/>
-                    </LinearLayout>
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            
+                            <Button
+                                android:id="@+id/btnBold"
+                                android:layout_width="45dp"
+                                android:layout_height="45dp"
+                                android:text="B"
+                                android:textStyle="bold"
+                                android:textSize="14sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnItalic"
+                                android:layout_width="45dp"
+                                android:layout_height="45dp"
+                                android:text="I"
+                                android:textStyle="italic"
+                                android:textSize="14sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnUnderline"
+                                android:layout_width="45dp"
+                                android:layout_height="45dp"
+                                android:text="U"
+                                android:textSize="14sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnH1"
+                                android:layout_width="45dp"
+                                android:layout_height="45dp"
+                                android:text="H1"
+                                android:textSize="12sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnH2"
+                                android:layout_width="45dp"
+                                android:layout_height="45dp"
+                                android:text="H2"
+                                android:textSize="12sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnBullets"
+                                android:layout_width="45dp"
+                                android:layout_height="45dp"
+                                android:text="•"
+                                android:textSize="18sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnNumbers"
+                                android:layout_width="45dp"
+                                android:layout_height="45dp"
+                                android:text="1."
+                                android:textSize="14sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnInsertImage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="45dp"
+                                android:text="IMG"
+                                android:textSize="12sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                            
+                            <Button
+                                android:id="@+id/btnInsertLink"
+                                android:layout_width="wrap_content"
+                                android:layout_height="45dp"
+                                android:text="LINK"
+                                android:textSize="12sp"
+                                android:backgroundTint="@color/secondary_premium"
+                                android:textColor="@color/white"
+                                android:layout_marginEnd="4dp"
+                                style="?android:attr/buttonBarButtonStyle"/>
+                        </LinearLayout>
+                    </HorizontalScrollView>
 
-                    <EditText
-                        android:id="@+id/etHomeContent"
+                    <!-- Rich Text Editor -->
+                    <jp.wasabeef.richeditor.RichEditor
+                        android:id="@+id/richEditor"
                         android:layout_width="match_parent"
-                        android:layout_height="250dp"
-                        android:hint="Type HTML content here..."
-                        android:gravity="top"
+                        android:layout_height="300dp"
                         android:background="@android:drawable/editbox_background"
-                        android:padding="12dp"
-                        android:textColor="@color/primary_premium"
-                        android:inputType="textMultiLine"
                         android:layout_marginBottom="16dp"/>
 
                     <Button
