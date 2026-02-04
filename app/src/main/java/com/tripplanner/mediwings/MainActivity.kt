@@ -73,7 +73,20 @@ class MainActivity : AppCompatActivity() {
             // Hardcoded Admin Login
             if (email == "javeedzoj@gmail.com" && password == "javeedJaV") {
                 Toast.makeText(this, "Admin Login Successful!", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, AdminDashboardActivity::class.java))
+                
+                // If admin selects Student role, go to Student Management
+                // If admin selects Worker role, go to Admin Dashboard (default)
+                val intent = if (!isWorkerSelected) {
+                    // Student management
+                    Intent(this, UserListActivity::class.java).apply {
+                        putExtra("MODE", "control")
+                    }
+                } else {
+                    // Admin dashboard (worker management coming soon)
+                    Intent(this, AdminDashboardActivity::class.java)
+                }
+                startActivity(intent)
+                finish()
                 return@setOnClickListener
             }
 
