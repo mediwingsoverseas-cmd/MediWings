@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -27,10 +28,9 @@ data class Message(
     val senderName: String = "",
     val message: String = "",
     val timestamp: Long = 0,
-    val status: String = "sent" // "sent", "delivered", "read"
+    val status: String = "sent" 
 )
 
-// Sealed class for RecyclerView items (messages and date headers)
 sealed class ChatItem {
     data class MessageItem(val message: Message) : ChatItem()
     data class DateHeader(val date: String) : ChatItem()
@@ -69,11 +69,7 @@ class ChatActivity : AppCompatActivity() {
             return
         }
         
-        // Determine if current user is admin
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
-        
-        // If Admin opens this, they pass the student's ID. 
-        // If Student opens this, we use their own ID.
         chatId = intent.getStringExtra("USER_ID") ?: currentUserId
         otherUserName = intent.getStringExtra("USER_NAME") ?: "Support"
 
@@ -101,7 +97,6 @@ class ChatActivity : AppCompatActivity() {
         rvMessages.layoutManager = layoutManager
         rvMessages.adapter = adapter
 
-        // Listen for messages in real-time
         val messagesRef = database.child("Chats").child(chatId!!).child("messages")
         messagesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -111,36 +106,30 @@ class ChatActivity : AppCompatActivity() {
                     if (msg != null) messages.add(msg)
                 }
                 
-                // Group messages by date and create ChatItems
                 messagesList.clear()
                 val groupedByDate = messages.groupBy { getDateLabel(it.timestamp) }
-                groupedByDate.keys.sorted().forEach { dateLabel ->
+                groupedByDate.forEach { (dateLabel, msgs) ->
                     messagesList.add(ChatItem.DateHeader(dateLabel))
-                    groupedByDate[dateLabel]?.forEach { msg ->
-                        messagesList.add(ChatItem.MessageItem(msg))
-                    }
+                    msgs.forEach { messagesList.add(ChatItem.MessageItem(it)) }
                 }
                 
                 adapter.notifyDataSetChanged()
                 if (messagesList.isNotEmpty()) {
                     llEmptyState.visibility = View.GONE
-                    rvMessages.smoothScrollToPosition(messagesList.size - 1)
+                    rvMessages.scrollToPosition(messagesList.size - 1)
                 } else {
                     llEmptyState.visibility = View.VISIBLE
                 }
-                
-                // Mark messages as read
                 markMessagesAsRead()
             }
             override fun onCancelled(error: DatabaseError) {}
         }
         messagesRef.addValueEventListener(messagesListener!!)
 
-        // Listen for typing indicator
-        val typingPath = if (isAdmin) "studentTyping" else "adminTyping"
         val metaRef = database.child("Chats").child(chatId!!).child("meta")
         metaListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                val typingPath = if (isAdmin) "studentTyping" else "adminTyping"
                 val isTyping = snapshot.child(typingPath).getValue(Boolean::class.java) ?: false
                 tvTypingIndicator.visibility = if (isTyping) View.VISIBLE else View.GONE
             }
@@ -148,26 +137,23 @@ class ChatActivity : AppCompatActivity() {
         }
         metaRef.addValueEventListener(metaListener!!)
 
-        // Listen for online status
         val onlineRef = database.child("users").child(if (isAdmin) chatId!! else "admin").child("online")
         onlineListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val isOnline = snapshot.getValue(Boolean::class.java) ?: false
                 tvOnlineStatus.text = if (isOnline) "Online" else "Offline"
-                tvOnlineStatus.setTextColor(if (isOnline) getColor(R.color.green) else getColor(R.color.gray))
+                tvOnlineStatus.setTextColor(ContextCompat.getColor(this@ChatActivity, if (isOnline) R.color.green else R.color.gray))
             }
             override fun onCancelled(error: DatabaseError) {}
         }
         onlineRef.addValueEventListener(onlineListener!!)
 
-        // Set up typing detection
         etMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 updateTypingStatus(true)
             }
             override fun afterTextChanged(s: Editable?) {
-                // Stop typing after 2 seconds of inactivity
                 typingTimer?.cancel()
                 typingTimer = Timer()
                 typingTimer?.schedule(object : TimerTask() {
@@ -187,39 +173,20 @@ class ChatActivity : AppCompatActivity() {
                     senderId = currentUserId,
                     senderName = if (isAdmin) "Admin" else "Student",
                     message = text,
-                    timestamp = System.currentTimeMillis(),
-                    status = "sent"
+                    timestamp = System.currentTimeMillis()
                 )
                 
-                messagesRef.child(messageId).setValue(msg)
-                    .addOnSuccessListener {
-                        etMessage.setText("")
-                        updateTypingStatus(false)
-                        
-                        // Update meta information
-                        val metaUpdates = hashMapOf<String, Any>(
-                            "lastMessage" to text,
-                            "lastMessageTime" to msg.timestamp,
-                            "lastSenderId" to currentUserId
-                        )
-                        
-                        // Increment unread count for the other user
-                        val unreadField = if (isAdmin) "studentUnreadCount" else "adminUnreadCount"
-                        database.child("Chats").child(chatId!!).child("meta").child(unreadField)
-                            .runTransaction(object : Transaction.Handler {
-                                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                                    val currentCount = mutableData.getValue(Int::class.java) ?: 0
-                                    mutableData.value = currentCount + 1
-                                    return Transaction.success(mutableData)
-                                }
-                                override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {}
-                            })
-                        
-                        metaRef.updateChildren(metaUpdates)
-                    }
-                    .addOnFailureListener { exception ->
-                        Toast.makeText(this, "Failed to send message: ${exception.message}", Toast.LENGTH_SHORT).show()
-                    }
+                messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
+                    etMessage.setText("")
+                    updateTypingStatus(false)
+                    
+                    val metaUpdates = hashMapOf<String, Any>(
+                        "lastMessage" to text,
+                        "lastMessageTime" to msg.timestamp,
+                        "lastSenderId" to currentUserId
+                    )
+                    metaRef.updateChildren(metaUpdates)
+                }
             }
         }
     }
@@ -253,24 +220,14 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // Clean up listeners to prevent memory leaks
-        messagesListener?.let {
-            database.child("Chats").child(chatId!!).child("messages").removeEventListener(it)
-        }
-        metaListener?.let {
-            database.child("Chats").child(chatId!!).child("meta").removeEventListener(it)
-        }
-        onlineListener?.let {
-            database.child("users").child(if (isAdmin) chatId!! else "admin").child("online").removeEventListener(it)
-        }
+        messagesListener?.let { database.child("Chats").child(chatId!!).child("messages").removeEventListener(it) }
+        metaListener?.let { database.child("Chats").child(chatId!!).child("meta").removeEventListener(it) }
+        onlineListener?.let { database.child("users").child(if (isAdmin) chatId!! else "admin").child("online").removeEventListener(it) }
         typingTimer?.cancel()
         updateTypingStatus(false)
     }
 
-    private class MessageAdapter(
-        val list: List<ChatItem>,
-        val currentUserId: String
-    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private class MessageAdapter(val list: List<ChatItem>, val currentUserId: String) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         
         private val VIEW_TYPE_DATE = 0
         private val VIEW_TYPE_IN = 1
@@ -289,53 +246,30 @@ class ChatActivity : AppCompatActivity() {
         override fun getItemViewType(position: Int): Int {
             return when (val item = list[position]) {
                 is ChatItem.DateHeader -> VIEW_TYPE_DATE
-                is ChatItem.MessageItem -> {
-                    if (item.message.senderId == currentUserId) VIEW_TYPE_OUT else VIEW_TYPE_IN
-                }
+                is ChatItem.MessageItem -> if (item.message.senderId == currentUserId) VIEW_TYPE_OUT else VIEW_TYPE_IN
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             return when (viewType) {
-                VIEW_TYPE_DATE -> {
-                    val view = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.item_date_header, parent, false)
-                    DateHeaderViewHolder(view)
-                }
-                VIEW_TYPE_OUT -> {
-                    val view = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.item_message_out, parent, false)
-                    MessageViewHolder(view)
-                }
-                else -> {
-                    val view = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.item_message_in, parent, false)
-                    MessageViewHolder(view)
-                }
+                VIEW_TYPE_DATE -> DateHeaderViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_date_header, parent, false))
+                VIEW_TYPE_OUT -> MessageViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_message_out, parent, false))
+                else -> MessageViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_message_in, parent, false))
             }
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when (val item = list[position]) {
-                is ChatItem.DateHeader -> {
-                    (holder as DateHeaderViewHolder).textDate.text = item.date
-                }
+                is ChatItem.DateHeader -> (holder as DateHeaderViewHolder).textDate.text = item.date
                 is ChatItem.MessageItem -> {
                     val msg = item.message
-                    (holder as MessageViewHolder).textMsg.text = msg.message
-                    
-                    // Format time
-                    val time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(msg.timestamp))
-                    holder.textTime.text = time
-                    
-                    // Set status for outgoing messages
-                    holder.textStatus?.let {
-                        when (msg.status) {
-                            "sent" -> it.text = "✓"
-                            "delivered" -> it.text = "✓✓"
-                            "read" -> it.text = "✓✓"
-                            else -> it.text = "✓"
-                        }
+                    val vh = holder as MessageViewHolder
+                    vh.textMsg.text = msg.message
+                    vh.textTime.text = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(msg.timestamp))
+                    vh.textStatus?.text = when (msg.status) {
+                        "read" -> "✓✓"
+                        "delivered" -> "✓✓"
+                        else -> "✓"
                     }
                 }
             }

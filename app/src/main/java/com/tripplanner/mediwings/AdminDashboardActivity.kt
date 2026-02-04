@@ -30,31 +30,34 @@ class AdminDashboardActivity : AppCompatActivity() {
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { uploadBannerToFirebase(it) }
-    }
-    
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-        if (isGranted) {
-            // Permission granted, proceed with image picker
-            pickImageLauncher.launch("image/*")
-        } else {
-            Toast.makeText(this, "Permission denied. Cannot upload banners.", Toast.LENGTH_LONG).show()
+    private val pickImageLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let { uploadBannerToFirebase(it) }
         }
-    }
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission granted, proceed with image picker
+                pickImageLauncher.launch("image/*")
+            } else {
+                Toast.makeText(this, "Permission denied. Cannot upload banners.", Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_dashboard)
 
         richEditor = findViewById(R.id.richEditor)
-        
+
         // Configure RichEditor
         richEditor.setEditorHeight(200)
         richEditor.setEditorFontSize(16)
         richEditor.setPadding(10, 10, 10, 10)
         richEditor.setPlaceholder("Enter content here...")
-        
+
         // Load dashboard stats
         loadDashboardStats()
 
@@ -146,7 +149,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                 richEditor.html = it.value.toString()
             }
         }
-        
+
         findViewById<Button>(R.id.btnAdminLogout).setOnClickListener {
             auth.signOut()
             // Clear saved preferences
@@ -159,7 +162,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     private fun uploadBannerToFirebase(fileUri: Uri) {
         Toast.makeText(this, "Uploading Banner $currentBannerId...", Toast.LENGTH_SHORT).show()
-        
+
         val timestamp = System.currentTimeMillis()
         val storageRef = storage.reference
             .child("banners")
@@ -170,11 +173,16 @@ class AdminDashboardActivity : AppCompatActivity() {
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     saveBannerUrlToDatabase(downloadUri.toString())
                 }.addOnFailureListener { exception ->
-                    Toast.makeText(this, "Failed to get download URL: ${exception.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        "Failed to get download URL: ${exception.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
             .addOnFailureListener { exception ->
-                Toast.makeText(this, "Upload Failed: ${exception.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Upload Failed: ${exception.message}", Toast.LENGTH_LONG)
+                    .show()
             }
     }
 
@@ -184,10 +192,14 @@ class AdminDashboardActivity : AppCompatActivity() {
                 Toast.makeText(this, "Banner $currentBannerId Saved!", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { exception ->
-                Toast.makeText(this, "Failed to save banner: ${exception.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this,
+                    "Failed to save banner: ${exception.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
     }
-    
+
     private fun checkPermissionAndPickImage() {
         // For Android 13+ (API 33/TIRAMISU and higher), use READ_MEDIA_IMAGES
         // For older versions (API 32 and below), use READ_EXTERNAL_STORAGE
@@ -196,67 +208,77 @@ class AdminDashboardActivity : AppCompatActivity() {
         } else {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
-        
+
         when {
-            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
+            ContextCompat.checkSelfPermission(
+                this,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED -> {
                 // Permission already granted
                 pickImageLauncher.launch("image/*")
             }
+
             shouldShowRequestPermissionRationale(permission) -> {
                 // Show explanation why permission is needed
-                Toast.makeText(this, "Permission needed to upload banners", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Permission needed to upload banners", Toast.LENGTH_LONG)
+                    .show()
                 requestPermissionLauncher.launch(permission)
             }
+
             else -> {
                 // Request permission
                 requestPermissionLauncher.launch(permission)
             }
         }
     }
-    
+
     private fun loadDashboardStats() {
         val tvTotalStudents = findViewById<TextView>(R.id.tvTotalStudents)
         val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
-        
+
         // Count total students (single read)
-        database.reference.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                var studentCount = 0
-                for (userSnapshot in snapshot.children) {
-                    val role = userSnapshot.child("role").value?.toString()
-                    if (role == "student") {
-                        studentCount++
+        database.reference.child("users")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var studentCount = 0
+                    for (userSnapshot in snapshot.children) {
+                        val role = userSnapshot.child("role").value?.toString()
+                        if (role == "student") {
+                            studentCount++
+                        }
                     }
+                    tvTotalStudents.text = studentCount.toString()
                 }
-                tvTotalStudents.text = studentCount.toString()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-        
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
+
         // Count active chats (single read)
-        database.reference.child("Chats").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val chatCount = snapshot.childrenCount.toInt()
-                tvActiveChats.text = chatCount.toString()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
+        database.reference.child("Chats")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val chatCount = snapshot.childrenCount.toInt()
+                    tvActiveChats.text = chatCount.toString()
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
     }
-    
+
     private fun showImageUrlDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Insert Image")
-        
+
         val container = android.widget.LinearLayout(this)
         container.orientation = android.widget.LinearLayout.VERTICAL
         container.setPadding(50, 20, 50, 20)
-        
+
         val input = EditText(this)
         input.hint = "Enter image URL (http:// or https://)"
         container.addView(input)
-        
+
         builder.setView(container)
-        
+
         builder.setPositiveButton("Insert") { dialog, _ ->
             val url = input.text.toString().trim()
             if (url.isNotEmpty() && isValidImageUrl(url)) {
@@ -265,56 +287,64 @@ class AdminDashboardActivity : AppCompatActivity() {
                 val imageWidth = (screenWidth * 0.9).toInt() // 90% of screen width
                 richEditor.insertImage(url, "image", imageWidth)
             } else {
-                Toast.makeText(this, "Please enter a valid image URL (http:// or https://)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Please enter a valid image URL (http:// or https://)",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             dialog.dismiss()
         }
         builder.setNegativeButton("Cancel") { dialog, _ ->
             dialog.cancel()
         }
-        
+
         builder.show()
     }
-    
+
     private fun showLinkDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Insert Link")
-        
+
         val container = android.widget.LinearLayout(this)
         container.orientation = android.widget.LinearLayout.VERTICAL
         container.setPadding(50, 20, 50, 20)
-        
+
         val urlInput = EditText(this)
         urlInput.hint = "Enter URL (http:// or https://)"
         container.addView(urlInput)
-        
+
         val textInput = EditText(this)
         textInput.hint = "Enter link text"
         container.addView(textInput)
-        
+
         builder.setView(container)
-        
+
         builder.setPositiveButton("Insert") { dialog, _ ->
             val url = urlInput.text.toString().trim()
             val text = textInput.text.toString().trim()
             if (url.isNotEmpty() && text.isNotEmpty() && isValidUrl(url)) {
                 richEditor.insertLink(url, text)
             } else {
-                Toast.makeText(this, "Please enter valid URL (http:// or https://) and link text", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Please enter valid URL (http:// or https://) and link text",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             dialog.dismiss()
         }
         builder.setNegativeButton("Cancel") { dialog, _ ->
             dialog.cancel()
         }
-        
+
         builder.show()
     }
-    
+
     private fun isValidUrl(url: String): Boolean {
         return url.startsWith("http://") || url.startsWith("https://")
     }
-    
+
     private fun isValidImageUrl(url: String): Boolean {
         return url.startsWith("http://") || url.startsWith("https://")
     }
