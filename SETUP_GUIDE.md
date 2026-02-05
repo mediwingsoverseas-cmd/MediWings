@@ -14,16 +14,134 @@ git clone https://github.com/mediwingsoverseas-cmd/MediWings.git
 cd MediWings
 ```
 
-### 2. Firebase Configuration
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your MediWings project
-3. Download `google-services.json`
-4. Place it in `app/` directory
-5. Ensure these services are enabled:
-   - Authentication (Email/Password)
-   - Realtime Database
-   - Storage
-   - Cloud Messaging
+### 2. Firebase Configuration (CRITICAL - Required for Build)
+
+#### Step-by-Step Firebase Setup
+
+**⚠️ IMPORTANT**: The app will NOT build without proper Firebase configuration!
+
+1. **Access Firebase Console**
+   - Navigate to [Firebase Console](https://console.firebase.google.com/)
+   - Sign in with your Google account
+
+2. **Select/Create the MediWings Firebase Project**
+   - Select the **"Mediwingsapp"** project (or create a new project for development/testing)
+   - Note: Production uses the official Mediwingsapp project
+
+3. **Configure Android App in Firebase**
+   - In Firebase Console, go to **Project Settings** (⚙️ gear icon)
+   - Scroll to **"Your apps"** section
+   - If Android app exists with package `com.tripplanner.mediwings`:
+     - Click on the app
+     - Click **"Download google-services.json"**
+   - If Android app doesn't exist:
+     - Click **"Add app"** → Select Android icon
+     - Enter package name: **`com.tripplanner.mediwings`** (EXACTLY as shown)
+     - Enter app nickname: "MediWings" (optional)
+     - Click **"Register app"**
+     - Download the **google-services.json** file
+
+4. **Place google-services.json in Correct Location**
+   ```
+   MediWings/
+   └── app/
+       └── google-services.json  ← MUST be exactly here
+   ```
+   - Copy the downloaded file to `app/google-services.json`
+   - **DO NOT** rename the file
+   - **DO NOT** commit this file to Git (it's in .gitignore)
+
+5. **Verify google-services.json Content**
+   - Open the file and verify:
+     - `"package_name": "com.tripplanner.mediwings"` is present
+     - `project_id`, `project_number`, and `api_key` are filled in
+   - If package name doesn't match, you downloaded the wrong file!
+
+6. **Enable Required Firebase Services**
+   
+   In your Firebase project, enable these services:
+   
+   a. **Authentication** (Required)
+      - Go to **Build → Authentication**
+      - Click **"Get Started"**
+      - Enable **"Email/Password"** sign-in method
+      - Click "Save"
+   
+   b. **Realtime Database** (Required)
+      - Go to **Build → Realtime Database**
+      - Click **"Create Database"**
+      - Choose location (e.g., us-central1)
+      - Start in **test mode** (for development)
+      - Click "Enable"
+   
+   c. **Cloud Storage** (Required)
+      - Go to **Build → Storage**
+      - Click **"Get Started"**
+      - Start in **test mode** (for development)
+      - Click "Done"
+   
+   d. **Cloud Messaging** (Required)
+      - Go to **Build → Cloud Messaging**
+      - Cloud Messaging is automatically enabled with your Firebase project
+      - No additional configuration needed at this stage
+   
+   e. **Analytics** (Recommended)
+      - Automatically enabled with Firebase
+      - View insights in **Analytics** dashboard
+
+7. **Configure Firebase Security Rules (Development)**
+   
+   For development/testing, use these rules:
+   
+   **Realtime Database Rules**:
+   ```json
+   {
+     "rules": {
+       "users": {
+         "$uid": {
+           ".read": "auth != null",
+           ".write": "auth != null && auth.uid == $uid"
+         }
+       },
+       "Chats": {
+         "$chatId": {
+           ".read": "auth != null",
+           ".write": "auth != null"
+         }
+       },
+       "NotificationQueue": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       },
+       "CMS": {
+         ".read": "true",
+         ".write": "auth != null"
+       },
+       "Banners": {
+         ".read": "true",
+         ".write": "auth != null"
+       },
+       "Universities": {
+         ".read": "true",
+         ".write": "auth != null"
+       }
+     }
+   }
+   ```
+   
+   **Storage Rules**:
+   ```
+   rules_version = '2';
+   service firebase.storage {
+     match /b/{bucket}/o {
+       match /{allPaths=**} {
+         allow read: if request.auth != null;
+         allow write: if request.auth != null 
+                      && request.resource.size < 1 * 1024 * 1024; // 1MB limit
+       }
+     }
+   }
+   ```
 
 ### 3. Open in Android Studio
 1. Open Android Studio
@@ -95,40 +213,112 @@ Or use Android Studio:
 
 ## Troubleshooting
 
+### Firebase Configuration Issues
+
+**Problem**: "File google-services.json is missing"  
+**Symptoms**: Build fails with error about missing google-services.json  
+**Solution**: 
+- Download `google-services.json` from Firebase Console
+- Place it exactly in `app/google-services.json` (not in subdirectories)
+- Sync Gradle: File → Sync Project with Gradle Files
+- Rebuild: Build → Clean Project, then Build → Rebuild Project
+
+**Problem**: "No matching client found for package name"  
+**Symptoms**: Firebase services not working, authentication fails  
+**Solution**:
+- Open `app/google-services.json`
+- Verify `"package_name": "com.tripplanner.mediwings"` is present
+- If different, you downloaded the wrong file or configured wrong package in Firebase
+- Re-download the correct file from Firebase Console
+
+**Problem**: "Default FirebaseApp is not initialized"  
+**Symptoms**: App crashes on launch with Firebase error  
+**Solution**:
+- Ensure `google-services.json` is in `app/` directory
+- Verify the file is valid JSON (not corrupted)
+- Check that `id("com.google.gms.google-services")` plugin is applied in `app/build.gradle.kts`
+- Clean and rebuild the project
+
+**Problem**: "API key not valid"  
+**Symptoms**: Firebase services return authentication errors  
+**Solution**:
+- Verify API key restrictions in Firebase Console → Project Settings → API Keys
+- For development, temporarily remove restrictions
+- Ensure the API key in google-services.json matches Firebase Console
+
 ### Build Failures
 
-**Problem**: "Could not resolve firebase-messaging"  
+**Problem**: "Could not resolve firebase-bom" or Firebase dependencies  
 **Solution**: 
 - Check internet connection
 - Verify `google-services.json` is in `app/` directory
 - Run `./gradlew clean build`
+- Check if Maven/Google repositories are accessible
+- Try invalidating caches: File → Invalidate Caches / Restart
 
 **Problem**: "Duplicate class" errors  
 **Solution**:
 - Build → Clean Project
 - Build → Rebuild Project
-- Invalidate Caches & Restart
+- File → Invalidate Caches & Restart
+- Check for conflicting Firebase dependency versions
+
+**Problem**: "Gradle sync failed: Plugin not found"  
+**Solution**:
+- Ensure internet connection is stable
+- Check `build.gradle.kts` has correct plugin versions
+- Try updating Gradle: ./gradlew wrapper --gradle-version 8.5
+
+**Problem**: Build fails with "Execution failed for task ':app:processDebugGoogleServices'"  
+**Symptoms**: Error about google-services.json processing  
+**Solution**:
+- Validate google-services.json syntax (use JSON validator)
+- Ensure package name matches exactly: `com.tripplanner.mediwings`
+- Re-download file from Firebase Console
+- Check file permissions (should be readable)
 
 ### Runtime Issues
 
 **Problem**: FCM notifications not received  
 **Solution**:
-- Test on physical device (emulator has limitations)
-- Check Firebase Console → Cloud Messaging
-- Verify POST_NOTIFICATIONS permission granted
-- Check device notification settings
+- Test on physical device (emulator has FCM limitations)
+- Check Firebase Console → Cloud Messaging (service enabled)
+- Verify POST_NOTIFICATIONS permission granted (Android 13+)
+- Check device notification settings for the app
+- Verify FCM token is being generated (check Logcat for "FCM_TOKEN")
+- Ensure app is not in battery optimization/doze mode
 
 **Problem**: Images not loading  
 **Solution**:
 - Verify internet connection
-- Check Firebase Storage rules
-- Ensure READ_MEDIA_IMAGES permission granted
+- Check Firebase Storage rules (should allow read/write for authenticated users)
+- Ensure READ_MEDIA_IMAGES permission granted (Android 13+)
+- Check Firebase Storage bucket URL in console
+- Verify storage usage hasn't exceeded free tier limits
 
-**Problem**: Chat not working  
+**Problem**: Chat not working / Messages not sending  
 **Solution**:
-- Verify Firebase Realtime Database rules
-- Check authentication state
-- Look for errors in Logcat
+- Verify Firebase Realtime Database rules allow read/write
+- Check authentication state (user must be logged in)
+- Look for errors in Logcat: `adb logcat | grep -E "Firebase|Chat"`
+- Ensure internet connectivity
+- Check database URL matches in Firebase Console
+
+**Problem**: Authentication fails  
+**Solution**:
+- Verify Email/Password provider is enabled in Firebase Console
+- Check user credentials are correct
+- Look for authentication errors in Logcat
+- Ensure google-services.json is correctly configured
+- Try disabling and re-enabling Email/Password auth in Console
+
+**Problem**: "Permission denied" errors from Firebase  
+**Solution**:
+- Check Firebase Realtime Database rules
+- Check Firebase Storage rules
+- Ensure user is authenticated before accessing protected resources
+- For development, temporarily use test mode rules (allow all)
+- Review rules in Firebase Console → Build → Database/Storage → Rules
 
 ## Firebase Console Setup
 
