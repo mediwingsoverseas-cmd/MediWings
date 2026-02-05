@@ -6,6 +6,16 @@
 - Android SDK (API 24-34)
 - Firebase account with project set up
 
+## 🔥 IMPORTANT: Firebase Configuration Required
+
+**⚠️ This app CANNOT build or run without proper Firebase configuration!**
+
+The `google-services.json` file is **NOT** included in this repository for security reasons. You **MUST** download it from Firebase Console before building.
+
+### Production vs Development
+- **Production**: Use the official "Mediwingsapp" Firebase project
+- **Development/Testing**: Create your own Firebase project or ask for access to a test environment
+
 ## Initial Setup
 
 ### 1. Clone the Repository
@@ -474,6 +484,135 @@ FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
   }
 }
 ```
+
+## 🚀 Production Deployment Checklist
+
+### Pre-Production Requirements
+
+Before deploying to production, ensure all of the following are complete:
+
+#### 1. Firebase Configuration ✅
+- [x] Application ID set to `com.tripplanner.mediwings` 
+- [x] google-services.json configured for production Firebase project
+- [x] Firebase BoM updated to latest stable version (33.7.0)
+- [x] All required Firebase services enabled (Auth, Database, Storage, Messaging, Analytics)
+- [ ] Production Firebase Security Rules implemented (see below)
+- [ ] Firebase project billing enabled for production scale
+
+#### 2. Security Configuration
+- [ ] Update Firebase Database rules to production-ready settings
+- [ ] Update Firebase Storage rules to production-ready settings  
+- [ ] Remove hardcoded admin credentials (move to Firebase Auth admin claims)
+- [ ] Enable ProGuard/R8 code obfuscation (set `isMinifyEnabled = true` in release build)
+- [ ] Add ProGuard rules to keep necessary classes (already configured in proguard-rules.pro)
+- [ ] Review and secure all API endpoints
+- [ ] Implement rate limiting on sensitive operations
+
+#### 3. Build Configuration
+- [ ] Generate signed release APK/AAB with production keystore
+- [ ] Update versionCode and versionName for release
+- [ ] Test release build thoroughly (different from debug build)
+- [ ] Enable App Signing in Google Play Console
+- [ ] Configure build variants for different environments if needed
+
+#### 4. Testing & Quality Assurance
+- [ ] Complete end-to-end testing on physical devices
+- [ ] Test on multiple Android versions (API 24-34)
+- [ ] Test on different screen sizes and densities
+- [ ] Verify FCM notifications work in production
+- [ ] Load testing for database and storage
+- [ ] Security audit of Firebase rules
+- [ ] Test offline scenarios and error handling
+
+#### 5. Documentation & Monitoring
+- [ ] Document deployment procedures
+- [ ] Set up Firebase Crashlytics for crash reporting
+- [ ] Configure Firebase Performance Monitoring
+- [ ] Set up alerts for critical Firebase events
+- [ ] Document rollback procedures
+
+### Production Firebase Security Rules
+
+**⚠️ IMPORTANT**: Replace test mode rules with these production rules before launch!
+
+**Realtime Database (Production)**:
+```json
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth.uid == $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "auth.uid == $uid",
+        "fcmToken": {
+          ".write": "auth.uid == $uid"
+        }
+      }
+    },
+    "Chats": {
+      "$chatId": {
+        ".read": "auth != null && (auth.uid == $chatId || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
+        ".write": "auth != null && (auth.uid == $chatId || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+      }
+    },
+    "NotificationQueue": {
+      ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true",
+      ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    },
+    "CMS": {
+      ".read": "true",
+      ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    },
+    "Banners": {
+      ".read": "true",
+      ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    },
+    "Universities": {
+      ".read": "true",
+      ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    }
+  }
+}
+```
+
+**Storage (Production)**:
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile images
+    match /users/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && request.resource.size < 1 * 1024 * 1024  // 1MB limit
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Chat images
+    match /chat_images/{chatId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.resource.size < 1 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Admin uploaded content (banners, etc)
+    match /banners/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null; // Add isAdmin check
+    }
+  }
+}
+```
+
+### Post-Deployment Steps
+1. Monitor Firebase Console for errors and unusual activity
+2. Check Firebase Analytics for user behavior insights  
+3. Monitor Crashlytics for any crash reports
+4. Verify FCM notifications are being delivered
+5. Check database and storage usage against quotas
+6. Monitor API quota usage
+7. Set up automated backup procedures for critical data
 
 ## Next Steps
 
