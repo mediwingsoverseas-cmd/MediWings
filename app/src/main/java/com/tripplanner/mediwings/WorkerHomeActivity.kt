@@ -136,39 +136,43 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
         
         database.child("workers").child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val name = snapshot.child("name").value?.toString() ?: "Worker"
-                val email = snapshot.child("email").value?.toString() ?: ""
-                val profilePic = snapshot.child("profilePic").value?.toString()
-                
-                // Update nav header
-                val headerView = navView.getHeaderView(0)
-                headerView.findViewById<TextView>(R.id.tvUserName).text = name
-                headerView.findViewById<TextView>(R.id.tvUserEmail).text = email
-                
-                profilePic?.let {
-                    val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivProfilePic)
-                    Glide.with(this@WorkerHomeActivity).load(it).circleCrop().into(ivProfilePic)
-                }
-                
-                // Update greeting
-                findViewById<TextView>(R.id.tvWelcome).text = "Hello, $name!"
-                
-                // Update profile view
-                findViewById<TextView>(R.id.tvProfileName).text = name
-                findViewById<TextView>(R.id.tvProfileEmail).text = email
-                val mobile = snapshot.child("mobile").value?.toString() ?: "Not provided"
-                findViewById<TextView>(R.id.tvProfileMobile).text = mobile
-                
-                profilePic?.let {
-                    Glide.with(this@WorkerHomeActivity)
-                        .load(it)
-                        .circleCrop()
-                        .into(findViewById(R.id.ivProfilePhoto))
+                try {
+                    val name = snapshot.child("name").value?.toString() ?: "Worker"
+                    val email = snapshot.child("email").value?.toString() ?: ""
+                    val profilePic = snapshot.child("profilePic").value?.toString()
+                    
+                    // Update nav header
+                    val headerView = navView.getHeaderView(0)
+                    headerView.findViewById<TextView>(R.id.tvUserName).text = name
+                    headerView.findViewById<TextView>(R.id.tvUserEmail).text = email
+                    
+                    profilePic?.let {
+                        val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivProfilePic)
+                        Glide.with(this@WorkerHomeActivity).load(it).circleCrop().into(ivProfilePic)
+                    }
+                    
+                    // Update greeting
+                    findViewById<TextView>(R.id.tvWelcome).text = "Hello, $name!"
+                    
+                    // Update profile view
+                    findViewById<TextView>(R.id.tvProfileName).text = name
+                    findViewById<TextView>(R.id.tvProfileEmail).text = email
+                    val mobile = snapshot.child("mobile").value?.toString() ?: "Not provided"
+                    findViewById<TextView>(R.id.tvProfileMobile).text = mobile
+                    
+                    profilePic?.let {
+                        Glide.with(this@WorkerHomeActivity)
+                            .load(it)
+                            .circleCrop()
+                            .into(findViewById(R.id.ivProfilePhoto))
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@WorkerHomeActivity, "Error loading user data: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(this@WorkerHomeActivity, "Failed to load user data", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@WorkerHomeActivity, "Failed to load user data: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
@@ -225,53 +229,71 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
     }
 
     private fun uploadDocument(uri: Uri, docType: String) {
-        val userId = auth.currentUser?.uid ?: return
-        
-        // Validate file size (<1MB)
-        val inputStream = contentResolver.openInputStream(uri)
-        val fileSize = inputStream?.available() ?: 0
-        inputStream?.close()
-
-        if (fileSize > 1024 * 1024) {
-            Toast.makeText(this, "File too large! Please select a file smaller than 1MB (${fileSize / 1024}KB selected)", Toast.LENGTH_LONG).show()
+        val userId = auth.currentUser?.uid ?: run {
+            Toast.makeText(this, "User not authenticated. Please log in again.", Toast.LENGTH_SHORT).show()
             return
         }
+        
+        try {
+            // Validate file size (<1MB)
+            val inputStream = contentResolver.openInputStream(uri)
+            val fileSize = inputStream?.available() ?: 0
+            inputStream?.close()
 
-        val progressDialog = AlertDialog.Builder(this)
-            .setTitle("Uploading...")
-            .setMessage("Please wait while we upload your file")
-            .setCancelable(false)
-            .create()
-        progressDialog.show()
+            if (fileSize == 0) {
+                Toast.makeText(this, "Invalid file selected. Please try again.", Toast.LENGTH_SHORT).show()
+                return
+            }
 
-        val storageRef = storage.reference.child("workers/$userId/$docType/${System.currentTimeMillis()}")
-        storageRef.putFile(uri)
-            .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    val path = when (docType) {
-                        "profile" -> "workers/$userId/profilePic"
-                        else -> "workers/$userId/documents/$docType"
+            if (fileSize > 1024 * 1024) {
+                val fileSizeKB = fileSize / 1024
+                Toast.makeText(this, "File too large! ${fileSizeKB}KB selected, max 1MB (1024KB)", Toast.LENGTH_LONG).show()
+                return
+            }
+
+            val progressDialog = AlertDialog.Builder(this)
+                .setTitle("Uploading...")
+                .setMessage("Please wait while we upload your $docType")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+
+            val storageRef = storage.reference.child("workers/$userId/$docType/${System.currentTimeMillis()}")
+            storageRef.putFile(uri)
+                .addOnSuccessListener {
+                    storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                        val path = when (docType) {
+                            "profile" -> "workers/$userId/profilePic"
+                            else -> "workers/$userId/documents/$docType"
+                        }
+                        
+                        database.child(path).setValue(downloadUri.toString())
+                            .addOnSuccessListener {
+                                progressDialog.dismiss()
+                                Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
+                                
+                                // Reload data only if activity is still valid
+                                if (!isFinishing && !isDestroyed) {
+                                    loadWorkerDocuments()
+                                    loadUserData(findViewById(R.id.nav_view))
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                progressDialog.dismiss()
+                                Toast.makeText(this, "Failed to save $docType: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                    }.addOnFailureListener { e ->
+                        progressDialog.dismiss()
+                        Toast.makeText(this, "Failed to get download URL: ${e.message}", Toast.LENGTH_LONG).show()
                     }
-                    
-                    database.child(path).setValue(downloadUri.toString())
-                        .addOnSuccessListener {
-                            progressDialog.dismiss()
-                            Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
-                            
-                            // Reload data
-                            loadWorkerDocuments()
-                            loadUserData(findViewById(R.id.nav_view))
-                        }
-                        .addOnFailureListener { e ->
-                            progressDialog.dismiss()
-                            Toast.makeText(this, "Failed to save: ${e.message}", Toast.LENGTH_LONG).show()
-                        }
                 }
-            }
-            .addOnFailureListener { e ->
-                progressDialog.dismiss()
-                Toast.makeText(this, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+                .addOnFailureListener { e ->
+                    progressDialog.dismiss()
+                    Toast.makeText(this, "Upload failed: ${e.message}. Please check your connection.", Toast.LENGTH_LONG).show()
+                }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error reading file: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun loadWorkerDocuments() {
@@ -280,29 +302,33 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
         database.child("workers").child(userId).child("documents")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    // Load resume preview
-                    val resumeUrl = snapshot.child("resume").value?.toString()
-                    if (!resumeUrl.isNullOrEmpty()) {
-                        findViewById<ImageView>(R.id.ivResumePreview).visibility = View.VISIBLE
-                        findViewById<Button>(R.id.btnUploadResume).text = "✓ Uploaded - Tap to Replace"
-                        findViewById<Button>(R.id.btnUploadResume).setBackgroundColor(
-                            ContextCompat.getColor(this@WorkerHomeActivity, R.color.success)
-                        )
-                    }
-                    
-                    // Load certificate preview
-                    val certUrl = snapshot.child("certificate").value?.toString()
-                    if (!certUrl.isNullOrEmpty()) {
-                        findViewById<ImageView>(R.id.ivCertificatePreview).visibility = View.VISIBLE
-                        findViewById<Button>(R.id.btnUploadCertificate).text = "✓ Uploaded - Tap to Replace"
-                        findViewById<Button>(R.id.btnUploadCertificate).setBackgroundColor(
-                            ContextCompat.getColor(this@WorkerHomeActivity, R.color.success)
-                        )
+                    try {
+                        // Load resume preview
+                        val resumeUrl = snapshot.child("resume").value?.toString()
+                        if (!resumeUrl.isNullOrEmpty()) {
+                            findViewById<ImageView>(R.id.ivResumePreview).visibility = View.VISIBLE
+                            findViewById<Button>(R.id.btnUploadResume).text = "✓ Uploaded - Tap to Replace"
+                            findViewById<Button>(R.id.btnUploadResume).setBackgroundColor(
+                                ContextCompat.getColor(this@WorkerHomeActivity, R.color.success)
+                            )
+                        }
+                        
+                        // Load certificate preview
+                        val certUrl = snapshot.child("certificate").value?.toString()
+                        if (!certUrl.isNullOrEmpty()) {
+                            findViewById<ImageView>(R.id.ivCertificatePreview).visibility = View.VISIBLE
+                            findViewById<Button>(R.id.btnUploadCertificate).text = "✓ Uploaded - Tap to Replace"
+                            findViewById<Button>(R.id.btnUploadCertificate).setBackgroundColor(
+                                ContextCompat.getColor(this@WorkerHomeActivity, R.color.success)
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(this@WorkerHomeActivity, "Error loading documents", Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    // Ignore
+                    Toast.makeText(this@WorkerHomeActivity, "Failed to load documents: ${error.message}", Toast.LENGTH_SHORT).show()
                 }
             })
     }
