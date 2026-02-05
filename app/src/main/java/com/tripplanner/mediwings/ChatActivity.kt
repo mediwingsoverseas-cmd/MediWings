@@ -88,11 +88,25 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
-        auth = FirebaseAuth.getInstance()
-        storage = FirebaseStorage.getInstance()
+        try {
+            auth = FirebaseAuth.getInstance()
+            storage = FirebaseStorage.getInstance()
+            database = FirebaseDatabase.getInstance().reference
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to initialize Firebase. Please check your connection.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
         
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
         userRole = intent.getStringExtra("USER_ROLE") ?: "student" // Get user role from intent
+        
+        // Validate role is either "student" or "worker"
+        if (userRole != "student" && userRole != "worker") {
+            Toast.makeText(this, "Invalid user role", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
         
         // Validate admin access - admin must have both IS_ADMIN flag and valid USER_ID to chat
         if (isAdmin) {
@@ -110,6 +124,7 @@ class ChatActivity : AppCompatActivity() {
         } else {
             // For students/workers, require Firebase authentication
             currentUserId = auth.currentUser?.uid ?: run {
+                Toast.makeText(this, "Authentication required. Please log in.", Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
@@ -121,9 +136,14 @@ class ChatActivity : AppCompatActivity() {
             fetchCurrentUserName()
         }
         
+        // Final validation: ensure chatId is valid
+        if (chatId.isNullOrEmpty() || chatId.contains("null")) {
+            Toast.makeText(this, "Invalid chat session. Please try again.", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+        
         otherUserName = intent.getStringExtra("USER_NAME") ?: "Support"
-
-        database = FirebaseDatabase.getInstance().reference
 
         rvMessages = findViewById(R.id.rvMessages)
         etMessage = findViewById(R.id.etMessage)
@@ -150,51 +170,69 @@ class ChatActivity : AppCompatActivity() {
         val messagesRef = database.child("Chats").child(chatId!!).child("messages")
         messagesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val messages = mutableListOf<Message>()
-                for (data in snapshot.children) {
-                    val msg = data.getValue(Message::class.java)
-                    if (msg != null) messages.add(msg)
+                try {
+                    val messages = mutableListOf<Message>()
+                    for (data in snapshot.children) {
+                        val msg = data.getValue(Message::class.java)
+                        if (msg != null) messages.add(msg)
+                    }
+                    
+                    messagesList.clear()
+                    val groupedByDate = messages.groupBy { getDateLabel(it.timestamp) }
+                    groupedByDate.forEach { (dateLabel, msgs) ->
+                        messagesList.add(ChatItem.DateHeader(dateLabel))
+                        msgs.forEach { messagesList.add(ChatItem.MessageItem(it)) }
+                    }
+                    
+                    adapter.notifyDataSetChanged()
+                    if (messagesList.isNotEmpty()) {
+                        llEmptyState.visibility = View.GONE
+                        rvMessages.scrollToPosition(messagesList.size - 1)
+                    } else {
+                        llEmptyState.visibility = View.VISIBLE
+                    }
+                    markMessagesAsRead()
+                } catch (e: Exception) {
+                    Toast.makeText(this@ChatActivity, "Error loading messages. Please try again.", Toast.LENGTH_SHORT).show()
                 }
-                
-                messagesList.clear()
-                val groupedByDate = messages.groupBy { getDateLabel(it.timestamp) }
-                groupedByDate.forEach { (dateLabel, msgs) ->
-                    messagesList.add(ChatItem.DateHeader(dateLabel))
-                    msgs.forEach { messagesList.add(ChatItem.MessageItem(it)) }
-                }
-                
-                adapter.notifyDataSetChanged()
-                if (messagesList.isNotEmpty()) {
-                    llEmptyState.visibility = View.GONE
-                    rvMessages.scrollToPosition(messagesList.size - 1)
-                } else {
-                    llEmptyState.visibility = View.VISIBLE
-                }
-                markMessagesAsRead()
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@ChatActivity, "Failed to load messages: ${error.message}", Toast.LENGTH_LONG).show()
+            }
         }
         messagesRef.addValueEventListener(messagesListener!!)
 
         val metaRef = database.child("Chats").child(chatId!!).child("meta")
         metaListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val typingPath = if (isAdmin) "studentTyping" else "adminTyping"
-                val isTyping = snapshot.child(typingPath).getValue(Boolean::class.java) ?: false
-                tvTypingIndicator.visibility = if (isTyping) View.VISIBLE else View.GONE
+                try {
+                    val typingPath = if (isAdmin) "studentTyping" else "adminTyping"
+                    val isTyping = snapshot.child(typingPath).getValue(Boolean::class.java) ?: false
+                    tvTypingIndicator.visibility = if (isTyping) View.VISIBLE else View.GONE
+                } catch (e: Exception) {
+                    // Silently ignore typing indicator errors
+                }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                // Typing indicator is not critical, silently ignore errors
+            }
         }
         metaRef.addValueEventListener(metaListener!!)
 
         val onlineRef = database.child("users").child(if (isAdmin) chatId!! else "admin").child("online")
         onlineListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val isOnline = snapshot.getValue(Boolean::class.java) ?: false
-                tvOnlineStatus.text = if (isOnline) "Online" else "Offline"
-                tvOnlineStatus.setTextColor(ContextCompat.getColor(this@ChatActivity, if (isOnline) R.color.green else R.color.gray))
+                try {
+                    val isOnline = snapshot.getValue(Boolean::class.java) ?: false
+                    tvOnlineStatus.text = if (isOnline) "Online" else "Offline"
+                    tvOnlineStatus.setTextColor(ContextCompat.getColor(this@ChatActivity, if (isOnline) R.color.green else R.color.gray))
+                } catch (e: Exception) {
+                    // Silently ignore online status errors
+                }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                // Online status is not critical, silently ignore errors
+            }
         }
         onlineRef.addValueEventListener(onlineListener!!)
 
@@ -233,7 +271,12 @@ class ChatActivity : AppCompatActivity() {
     }
     
     private fun sendTextMessage(text: String, messagesRef: DatabaseReference) {
-        val messageId = messagesRef.push().key ?: return
+        val messageId = messagesRef.push().key
+        if (messageId == null) {
+            Toast.makeText(this, "Failed to generate message ID. Please try again.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         val senderName = when {
             currentUserName.isNotEmpty() -> currentUserName
             isAdmin -> "Admin"
@@ -247,25 +290,34 @@ class ChatActivity : AppCompatActivity() {
             timestamp = System.currentTimeMillis()
         )
         
-        messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
-            etMessage.setText("")
-            updateTypingStatus(false)
-            
-            val metaRef = database.child("Chats").child(chatId!!).child("meta")
-            val metaUpdates = hashMapOf<String, Any>(
-                "lastMessage" to text,
-                "lastMessageTime" to msg.timestamp,
-                "lastSenderId" to currentUserId
-            )
-            metaRef.updateChildren(metaUpdates)
-            
-            // Trigger notification for the other user
-            triggerNotification(text, "text")
-        }
+        messagesRef.child(messageId).setValue(msg)
+            .addOnSuccessListener {
+                etMessage.setText("")
+                updateTypingStatus(false)
+                
+                val metaRef = database.child("Chats").child(chatId!!).child("meta")
+                val metaUpdates = hashMapOf<String, Any>(
+                    "lastMessage" to text,
+                    "lastMessageTime" to msg.timestamp,
+                    "lastSenderId" to currentUserId
+                )
+                metaRef.updateChildren(metaUpdates)
+                
+                // Trigger notification for the other user
+                triggerNotification(text, "text")
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Failed to send message: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
     }
     
     private fun sendMediaMessage(mediaUrl: String, mediaType: String, messagesRef: DatabaseReference) {
-        val messageId = messagesRef.push().key ?: return
+        val messageId = messagesRef.push().key
+        if (messageId == null) {
+            Toast.makeText(this, "Failed to generate message ID. Please try again.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         val displayText = if (mediaType == "image") "📷 Photo" else "📎 File"
         val senderName = when {
             currentUserName.isNotEmpty() -> currentUserName
@@ -282,18 +334,22 @@ class ChatActivity : AppCompatActivity() {
             mediaType = mediaType
         )
         
-        messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
-            val metaRef = database.child("Chats").child(chatId!!).child("meta")
-            val metaUpdates = hashMapOf<String, Any>(
-                "lastMessage" to displayText,
-                "lastMessageTime" to msg.timestamp,
-                "lastSenderId" to currentUserId
-            )
-            metaRef.updateChildren(metaUpdates)
-            
-            // Trigger notification for the other user
-            triggerNotification(displayText, mediaType)
-        }
+        messagesRef.child(messageId).setValue(msg)
+            .addOnSuccessListener {
+                val metaRef = database.child("Chats").child(chatId!!).child("meta")
+                val metaUpdates = hashMapOf<String, Any>(
+                    "lastMessage" to displayText,
+                    "lastMessageTime" to msg.timestamp,
+                    "lastSenderId" to currentUserId
+                )
+                metaRef.updateChildren(metaUpdates)
+                
+                // Trigger notification for the other user
+                triggerNotification(displayText, mediaType)
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Failed to send media message: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
     }
     
     private fun checkPermissionAndPickMedia() {
@@ -320,35 +376,47 @@ class ChatActivity : AppCompatActivity() {
     private fun uploadMedia(uri: Uri) {
         Toast.makeText(this, "Uploading media...", Toast.LENGTH_SHORT).show()
         
-        // Check file size
-        val inputStream = contentResolver.openInputStream(uri)
-        val fileSize = inputStream?.available() ?: 0
-        inputStream?.close()
-        
-        if (fileSize > 1024 * 1024) { // 1MB limit
-            Toast.makeText(this, "File too large! Please select a file smaller than 1MB", Toast.LENGTH_LONG).show()
-            return
-        }
-        
-        val timestamp = System.currentTimeMillis()
-        val filename = "chat_media_${timestamp}.jpg"
-        
-        val storageRef = storage.reference
-            .child("chat_media")
-            .child(chatId!!)
-            .child(filename)
-        
-        storageRef.putFile(uri)
-            .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    val messagesRef = database.child("Chats").child(chatId!!).child("messages")
-                    sendMediaMessage(downloadUri.toString(), "image", messagesRef)
-                    Toast.makeText(this, "Media sent!", Toast.LENGTH_SHORT).show()
+        try {
+            // Check file size
+            val inputStream = contentResolver.openInputStream(uri)
+            val fileSize = inputStream?.available() ?: 0
+            inputStream?.close()
+            
+            if (fileSize > 1024 * 1024) { // 1MB limit
+                val fileSizeKB = fileSize / 1024
+                Toast.makeText(this, "File too large! ${fileSizeKB}KB selected, max 1MB (1024KB)", Toast.LENGTH_LONG).show()
+                return
+            }
+            
+            if (fileSize == 0) {
+                Toast.makeText(this, "Invalid file selected. Please try again.", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            val timestamp = System.currentTimeMillis()
+            val filename = "chat_media_${timestamp}.jpg"
+            
+            val storageRef = storage.reference
+                .child("chat_media")
+                .child(chatId!!)
+                .child(filename)
+            
+            storageRef.putFile(uri)
+                .addOnSuccessListener {
+                    storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                        val messagesRef = database.child("Chats").child(chatId!!).child("messages")
+                        sendMediaMessage(downloadUri.toString(), "image", messagesRef)
+                        Toast.makeText(this, "Media sent!", Toast.LENGTH_SHORT).show()
+                    }.addOnFailureListener { exception ->
+                        Toast.makeText(this, "Failed to get download URL: ${exception.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
-            }
-            .addOnFailureListener { exception ->
-                Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
-            }
+                .addOnFailureListener { exception ->
+                    Toast.makeText(this, "Upload failed: ${exception.message}. Please check your connection.", Toast.LENGTH_LONG).show()
+                }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error reading file: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
     
     private fun triggerNotification(messageText: String, messageType: String) {
@@ -381,13 +449,25 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun updateTypingStatus(isTyping: Boolean) {
-        val typingPath = if (isAdmin) "adminTyping" else "studentTyping"
-        database.child("Chats").child(chatId!!).child("meta").child(typingPath).setValue(isTyping)
+        try {
+            chatId?.let { id ->
+                val typingPath = if (isAdmin) "adminTyping" else "studentTyping"
+                database.child("Chats").child(id).child("meta").child(typingPath).setValue(isTyping)
+            }
+        } catch (e: Exception) {
+            // Silently ignore typing status update errors
+        }
     }
 
     private fun markMessagesAsRead() {
-        val unreadField = if (isAdmin) "adminUnreadCount" else "studentUnreadCount"
-        database.child("Chats").child(chatId!!).child("meta").child(unreadField).setValue(0)
+        try {
+            chatId?.let { id ->
+                val unreadField = if (isAdmin) "adminUnreadCount" else "studentUnreadCount"
+                database.child("Chats").child(id).child("meta").child(unreadField).setValue(0)
+            }
+        } catch (e: Exception) {
+            // Silently ignore mark as read errors
+        }
     }
 
     private fun getDateLabel(timestamp: Long): String {
@@ -408,24 +488,49 @@ class ChatActivity : AppCompatActivity() {
     }
     
     private fun fetchCurrentUserName() {
-        database.child("users").child(currentUserId).child("name")
+        // Determine the correct database path based on role
+        val userPath = if (userRole == "worker") "workers" else "users"
+        
+        database.child(userPath).child(currentUserId).child("name")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     currentUserName = snapshot.value?.toString() ?: ""
+                    if (currentUserName.isEmpty()) {
+                        // Fallback: try alternate path if name not found
+                        val alternatePath = if (userRole == "worker") "users" else "workers"
+                        database.child(alternatePath).child(currentUserId).child("name")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    currentUserName = snapshot.value?.toString() ?: "User"
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    currentUserName = "User"
+                                }
+                            })
+                    }
                 }
                 override fun onCancelled(error: DatabaseError) {
-                    currentUserName = ""
+                    currentUserName = "User"
                 }
             })
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        messagesListener?.let { database.child("Chats").child(chatId!!).child("messages").removeEventListener(it) }
-        metaListener?.let { database.child("Chats").child(chatId!!).child("meta").removeEventListener(it) }
-        onlineListener?.let { database.child("users").child(if (isAdmin) chatId!! else "admin").child("online").removeEventListener(it) }
-        typingTimer?.cancel()
-        updateTypingStatus(false)
+        try {
+            chatId?.let { id ->
+                messagesListener?.let { database.child("Chats").child(id).child("messages").removeEventListener(it) }
+                metaListener?.let { database.child("Chats").child(id).child("meta").removeEventListener(it) }
+                onlineListener?.let { 
+                    val onlineUserId = if (isAdmin) id else "admin"
+                    database.child("users").child(onlineUserId).child("online").removeEventListener(it) 
+                }
+                updateTypingStatus(false)
+            }
+            typingTimer?.cancel()
+        } catch (e: Exception) {
+            // Silently handle cleanup errors
+        }
     }
 
     private class MessageAdapter(val list: List<ChatItem>, val currentUserId: String) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {

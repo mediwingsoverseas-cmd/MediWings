@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        Toast.makeText(this, "Login Successful!", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show()
                         
                         // Save the role preference
                         val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
@@ -135,7 +135,16 @@ class MainActivity : AppCompatActivity() {
                         startActivity(intent)
                         finish()
                     } else {
-                        Toast.makeText(this, "Login Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                        val errorMessage = when {
+                            task.exception?.message?.contains("no user record", ignoreCase = true) == true -> 
+                                "No account found with this email. Please register first."
+                            task.exception?.message?.contains("password is invalid", ignoreCase = true) == true -> 
+                                "Incorrect password. Please try again."
+                            task.exception?.message?.contains("network", ignoreCase = true) == true -> 
+                                "Network error. Please check your connection."
+                            else -> "Login Failed: ${task.exception?.message}"
+                        }
+                        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
                     }
                 }
         }

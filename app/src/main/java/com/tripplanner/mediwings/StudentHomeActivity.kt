@@ -203,21 +203,27 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         // Load banners from Firebase
         database.child("Banners").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                bannersList.clear()
-                for (data in snapshot.children) {
-                    val url = data.value?.toString()
-                    if (!url.isNullOrEmpty()) {
-                        bannersList.add(url)
+                try {
+                    bannersList.clear()
+                    for (data in snapshot.children) {
+                        val url = data.value?.toString()
+                        if (!url.isNullOrEmpty()) {
+                            bannersList.add(url)
+                        }
                     }
-                }
-                adapter.notifyDataSetChanged()
-                
-                // Start auto-scroll if there are banners
-                if (bannersList.isNotEmpty()) {
-                    startAutoScroll(bannersList.size)
+                    adapter.notifyDataSetChanged()
+                    
+                    // Start auto-scroll if there are banners
+                    if (bannersList.isNotEmpty()) {
+                        startAutoScroll(bannersList.size)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@StudentHomeActivity, "Error loading banners", Toast.LENGTH_SHORT).show()
                 }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@StudentHomeActivity, "Failed to load banners: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
         })
     }
     
