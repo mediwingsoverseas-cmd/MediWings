@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase Configuration - DO NOT COMMIT
+# Download from Firebase Console for your project
+google-services.json
+app/google-services.json
