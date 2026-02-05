@@ -63,31 +63,38 @@ class UserListActivity : AppCompatActivity() {
         // Load users
         database.child("users").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                userList.clear()
-                val usersToLoad = mutableListOf<UserData>()
-                
-                for (data in snapshot.children) {
-                    val uid = data.key ?: continue
-                    val role = data.child("role").value?.toString() ?: ""
+                try {
+                    userList.clear()
+                    val usersToLoad = mutableListOf<UserData>()
                     
-                    // Filter out admin users and users not matching the selected role
-                    if (role.equals("admin", ignoreCase = true)) continue
-                    if (role != userRole) continue
+                    for (data in snapshot.children) {
+                        val uid = data.key ?: continue
+                        val role = data.child("role").value?.toString() ?: ""
+                        
+                        // Filter out admin users and users not matching the selected role
+                        if (role.equals("admin", ignoreCase = true)) continue
+                        if (role != userRole) continue
+                        
+                        val name = data.child("name").value?.toString() ?: "Unknown"
+                        val profilePic = data.child("profilePic").value?.toString() ?: ""
+                        val isOnline = data.child("online").getValue(Boolean::class.java) ?: false
+                        usersToLoad.add(UserData(uid, name, profilePic, isOnline))
+                    }
                     
-                    val name = data.child("name").value?.toString() ?: "Unknown"
-                    val profilePic = data.child("profilePic").value?.toString() ?: ""
-                    val isOnline = data.child("online").getValue(Boolean::class.java) ?: false
-                    usersToLoad.add(UserData(uid, name, profilePic, isOnline))
-                }
-                
-                // Load chat metadata for each user
-                if (usersToLoad.isNotEmpty()) {
-                    loadChatMetadata(usersToLoad, userList, adapter)
-                } else {
-                    adapter.notifyDataSetChanged()
+                    // Load chat metadata for each user
+                    if (usersToLoad.isNotEmpty()) {
+                        loadChatMetadata(usersToLoad, userList, adapter)
+                    } else {
+                        adapter.notifyDataSetChanged()
+                        Toast.makeText(this@UserListActivity, "No ${if (userRole == "worker") "workers" else "students"} found", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@UserListActivity, "Error loading users: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@UserListActivity, "Failed to load users: ${error.message}", Toast.LENGTH_LONG).show()
+            }
         })
     }
 

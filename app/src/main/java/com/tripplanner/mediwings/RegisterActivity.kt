@@ -89,17 +89,26 @@ class RegisterActivity : AppCompatActivity() {
                             userRef.setValue(userData)
                                 .addOnCompleteListener { dbTask ->
                                     if (dbTask.isSuccessful) {
-                                        Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(this, "Registration successful! Please login.", Toast.LENGTH_LONG).show()
                                         finish()
                                     } else {
-                                        Toast.makeText(this, "Database Error: ${dbTask.exception?.message}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(this, "Failed to save user data: ${dbTask.exception?.message}", Toast.LENGTH_LONG).show()
                                     }
                                 }
                         } else {
-                            Toast.makeText(this, "Error: User ID is null", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Registration failed: User ID is null", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        Toast.makeText(this, "Authentication Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                        val errorMessage = when {
+                            task.exception?.message?.contains("email address is already", ignoreCase = true) == true -> 
+                                "This email is already registered. Please login instead."
+                            task.exception?.message?.contains("badly formatted", ignoreCase = true) == true -> 
+                                "Invalid email format. Please check and try again."
+                            task.exception?.message?.contains("network", ignoreCase = true) == true -> 
+                                "Network error. Please check your connection."
+                            else -> "Registration failed: ${task.exception?.message}"
+                        }
+                        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
                     }
                 }
         }

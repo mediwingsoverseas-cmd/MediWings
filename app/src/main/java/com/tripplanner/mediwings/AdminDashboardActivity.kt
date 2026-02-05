@@ -114,20 +114,34 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnSaveCMS).setOnClickListener {
             val content = richEditor.html ?: ""
-            if (content.isNotEmpty()) {
-                database.reference.child("CMS").child("home_content").setValue(content)
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "Home Page Updated!", Toast.LENGTH_SHORT).show()
-                    }
+            if (content.isEmpty()) {
+                Toast.makeText(this, "Cannot save empty content", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
+            
+            database.reference.child("CMS").child("home_content").setValue(content)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Home Page Updated Successfully!", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { exception ->
+                    Toast.makeText(this, "Failed to update: ${exception.message}", Toast.LENGTH_LONG).show()
+                }
         }
 
         // Load existing content
-        database.reference.child("CMS").child("home_content").get().addOnSuccessListener {
-            if (it.exists()) {
-                richEditor.html = it.value.toString()
+        database.reference.child("CMS").child("home_content").get()
+            .addOnSuccessListener {
+                try {
+                    if (it.exists()) {
+                        richEditor.html = it.value.toString()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error loading content: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
-        }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Failed to load content: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
         
         findViewById<Button>(R.id.btnAdminLogout).setOnClickListener {
             auth.signOut()
@@ -146,32 +160,48 @@ class AdminDashboardActivity : AppCompatActivity() {
         // Count total users based on admin mode (single read)
         database.reference.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                var userCount = 0
-                for (userSnapshot in snapshot.children) {
-                    val role = userSnapshot.child("role").value?.toString()
-                    if (role == adminMode) {
-                        userCount++
+                try {
+                    var userCount = 0
+                    for (userSnapshot in snapshot.children) {
+                        val role = userSnapshot.child("role").value?.toString()
+                        if (role == adminMode) {
+                            userCount++
+                        }
                     }
+                    tvTotalStudents.text = userCount.toString()
+                } catch (e: Exception) {
+                    Toast.makeText(this@AdminDashboardActivity, "Error loading user stats", Toast.LENGTH_SHORT).show()
+                    tvTotalStudents.text = "0"
                 }
-                tvTotalStudents.text = userCount.toString()
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@AdminDashboardActivity, "Failed to load user stats: ${error.message}", Toast.LENGTH_SHORT).show()
+                tvTotalStudents.text = "0"
+            }
         })
         
         // Count active chats for this role (single read)
         database.reference.child("Chats").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                var chatCount = 0
-                for (chatSnapshot in snapshot.children) {
-                    val chatId = chatSnapshot.key ?: continue
-                    // Check if chat ID ends with the current admin mode (role)
-                    if (chatId.endsWith("_$adminMode")) {
-                        chatCount++
+                try {
+                    var chatCount = 0
+                    for (chatSnapshot in snapshot.children) {
+                        val chatId = chatSnapshot.key ?: continue
+                        // Check if chat ID ends with the current admin mode (role)
+                        if (chatId.endsWith("_$adminMode")) {
+                            chatCount++
+                        }
                     }
+                    tvActiveChats.text = chatCount.toString()
+                } catch (e: Exception) {
+                    Toast.makeText(this@AdminDashboardActivity, "Error loading chat stats", Toast.LENGTH_SHORT).show()
+                    tvActiveChats.text = "0"
                 }
-                tvActiveChats.text = chatCount.toString()
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@AdminDashboardActivity, "Failed to load chat stats: ${error.message}", Toast.LENGTH_SHORT).show()
+                tvActiveChats.text = "0"
+            }
         })
     }
     
