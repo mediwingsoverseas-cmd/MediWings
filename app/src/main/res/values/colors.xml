@@ -52,9 +52,12 @@
     <color name="purple_200">#D4AF37</color>
     <color name="purple_500">#0D1B2A</color>
     
-    <!-- Login Button Colors -->
-    <color name="student_button">#1E88E5</color>  <!-- Blue - for Student -->
-    <color name="worker_button">#43A047</color>   <!-- Green - for Worker -->
-    <color name="student_button_selected">#1565C0</color>  <!-- Darker Blue - selected -->
-    <color name="worker_button_selected">#2E7D32</color>   <!-- Darker Green - selected -->
+    <!-- Login Button Colors - Modern Deep Accent Tones -->
+    <!-- Student Button Colors - Deep Teal/Blue -->
+    <color name="student_button_selected">#0D47A1</color>  <!-- Rich Deep Blue - selected Student -->
+    <color name="student_button_inactive">#90A4C0</color>  <!-- Desaturated Blue - inactive Student -->
+    
+    <!-- Worker Button Colors - Deep Emerald/Teal -->
+    <color name="worker_button_selected">#004D40</color>   <!-- Rich Deep Teal - selected Worker -->
+    <color name="worker_button_inactive">#80A89F</color>   <!-- Desaturated Teal - inactive Worker -->
 </resources>
