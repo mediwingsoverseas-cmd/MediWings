@@ -72,15 +72,19 @@ class MainActivity : AppCompatActivity() {
             if (isWorkerSelected) {
                 isWorkerSelected = false
                 
-                // Animate Student button to selected state with elevation
+                // Set backgrounds first to avoid flicker
+                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
+                btnRoleStudent.elevation = elevationSelected
+                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
+                btnRoleWorker.elevation = elevationInactive
+                
+                // Then animate Student button to selected state
                 btnRoleStudent.animate()
                     .alpha(1.0f)
                     .scaleX(1.0f)
                     .scaleY(1.0f)
                     .setDuration(200)
                     .start()
-                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
-                btnRoleStudent.elevation = elevationSelected
                 
                 // Animate Worker button to inactive state
                 btnRoleWorker.animate()
@@ -89,8 +93,6 @@ class MainActivity : AppCompatActivity() {
                     .scaleY(0.98f)
                     .setDuration(200)
                     .start()
-                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
-                btnRoleWorker.elevation = elevationInactive
                 
                 // Animate title sliding from left to right
                 animateTitleChange(tvAppName, tvTagline, "MediWings Student Portal", 
@@ -102,15 +104,19 @@ class MainActivity : AppCompatActivity() {
             if (!isWorkerSelected) {
                 isWorkerSelected = true
                 
-                // Animate Worker button to selected state with elevation
+                // Set backgrounds first to avoid flicker
+                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_selected)
+                btnRoleWorker.elevation = elevationSelected
+                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_inactive)
+                btnRoleStudent.elevation = elevationInactive
+                
+                // Then animate Worker button to selected state
                 btnRoleWorker.animate()
                     .alpha(1.0f)
                     .scaleX(1.0f)
                     .scaleY(1.0f)
                     .setDuration(200)
                     .start()
-                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_selected)
-                btnRoleWorker.elevation = elevationSelected
                 
                 // Animate Student button to inactive state
                 btnRoleStudent.animate()
@@ -119,8 +125,6 @@ class MainActivity : AppCompatActivity() {
                     .scaleY(0.98f)
                     .setDuration(200)
                     .start()
-                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_inactive)
-                btnRoleStudent.elevation = elevationInactive
                 
                 // Animate title sliding from right to left
                 animateTitleChange(tvAppName, tvTagline, "MediWings Worker Portal", 
