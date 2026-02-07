@@ -180,6 +180,20 @@ Simulate the following conditions:
 
 ### UI Tests (Espresso)
 ```kotlin
+// Note: Custom matcher for elevation testing
+// Add this to your test utilities:
+fun hasElevation(expectedElevation: Float): Matcher<View> {
+    return object : BoundedMatcher<View, View>(View::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("has elevation of $expectedElevation dp")
+        }
+        
+        override fun matchesSafely(view: View): Boolean {
+            return view.elevation == expectedElevation
+        }
+    }
+}
+
 @Test
 fun testStudentButtonSelected() {
     // Verify Student button is selected by default

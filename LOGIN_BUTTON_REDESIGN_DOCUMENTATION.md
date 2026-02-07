@@ -85,12 +85,10 @@ All state changes are smoothly animated over 200ms duration:
 
 ```xml
 <!-- Student Button Colors -->
-<color name="student_button">#1565C0</color>
 <color name="student_button_selected">#0D47A1</color>
 <color name="student_button_inactive">#90A4C0</color>
 
 <!-- Worker Button Colors -->
-<color name="worker_button">#00695C</color>
 <color name="worker_button_selected">#004D40</color>
 <color name="worker_button_inactive">#80A89F</color>
 ```
