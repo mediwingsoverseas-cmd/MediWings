@@ -356,11 +356,13 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         
         val nameInput = EditText(this)
         nameInput.hint = "Name"
+        nameInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PERSON_NAME
         nameInput.setText(findViewById<TextView>(R.id.tvProfileName).text)
         layout.addView(nameInput)
         
         val mobileInput = EditText(this)
         mobileInput.hint = "Mobile"
+        mobileInput.inputType = android.text.InputType.TYPE_CLASS_PHONE
         mobileInput.setText(findViewById<TextView>(R.id.tvProfileMobile).text)
         layout.addView(mobileInput)
         
@@ -368,9 +370,17 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         
         builder.setPositiveButton("Save") { _, _ ->
             val userId = auth.currentUser?.uid ?: return@setPositiveButton
+            val name = nameInput.text.toString().trim()
+            val mobile = mobileInput.text.toString().trim()
+            
+            if (name.isEmpty() || mobile.isEmpty()) {
+                Toast.makeText(this, "Please enter name and mobile", Toast.LENGTH_SHORT).show()
+                return@setPositiveButton
+            }
+            
             val updates = hashMapOf<String, Any>(
-                "name" to nameInput.text.toString(),
-                "mobile" to mobileInput.text.toString()
+                "name" to name,
+                "mobile" to mobile
             )
             
             database.child("users").child(userId).updateChildren(updates)
