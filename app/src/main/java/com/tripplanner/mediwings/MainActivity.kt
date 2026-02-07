@@ -48,11 +48,16 @@ class MainActivity : AppCompatActivity() {
         
         var isWorkerSelected = false
         
-        // Initialize Student button as selected by default
-        btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
+        // Initialize Student button as selected by default with elevation and visual effects
+        btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
         btnRoleStudent.setTextColor(getColor(R.color.white))
-        btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
+        btnRoleStudent.elevation = 8f
+        btnRoleStudent.alpha = 1.0f
+        
+        btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
         btnRoleWorker.setTextColor(getColor(R.color.white))
+        btnRoleWorker.elevation = 0f
+        btnRoleWorker.alpha = 0.6f
         
         // Set initial title for Student
         tvAppName.text = "MediWings Student Portal"
@@ -62,10 +67,26 @@ class MainActivity : AppCompatActivity() {
         btnRoleStudent.setOnClickListener {
             if (isWorkerSelected) {
                 isWorkerSelected = false
-                btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
-                btnRoleStudent.setTextColor(getColor(R.color.white))
-                btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
-                btnRoleWorker.setTextColor(getColor(R.color.white))
+                
+                // Animate Student button to selected state with elevation
+                btnRoleStudent.animate()
+                    .alpha(1.0f)
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .start()
+                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
+                btnRoleStudent.elevation = 8f
+                
+                // Animate Worker button to inactive state
+                btnRoleWorker.animate()
+                    .alpha(0.6f)
+                    .scaleX(0.98f)
+                    .scaleY(0.98f)
+                    .setDuration(200)
+                    .start()
+                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
+                btnRoleWorker.elevation = 0f
                 
                 // Animate title sliding from left to right
                 animateTitleChange(tvAppName, tvTagline, "MediWings Student Portal", 
@@ -76,10 +97,26 @@ class MainActivity : AppCompatActivity() {
         btnRoleWorker.setOnClickListener {
             if (!isWorkerSelected) {
                 isWorkerSelected = true
-                btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button_selected))
-                btnRoleWorker.setTextColor(getColor(R.color.white))
-                btnRoleStudent.setBackgroundColor(getColor(R.color.student_button))
-                btnRoleStudent.setTextColor(getColor(R.color.white))
+                
+                // Animate Worker button to selected state with elevation
+                btnRoleWorker.animate()
+                    .alpha(1.0f)
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .start()
+                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_selected)
+                btnRoleWorker.elevation = 8f
+                
+                // Animate Student button to inactive state
+                btnRoleStudent.animate()
+                    .alpha(0.6f)
+                    .scaleX(0.98f)
+                    .scaleY(0.98f)
+                    .setDuration(200)
+                    .start()
+                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_inactive)
+                btnRoleStudent.elevation = 0f
                 
                 // Animate title sliding from right to left
                 animateTitleChange(tvAppName, tvTagline, "MediWings Worker Portal", 

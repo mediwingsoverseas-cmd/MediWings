@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow layer for elevation effect -->
+    <item android:top="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="8dp"/>
+            <solid android:color="#40000000"/>
+        </shape>
+    </item>
+    
+    <!-- Main button layer with gradient for depth -->
+    <item android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="8dp"/>
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="@color/worker_button_selected"
+                android:endColor="#003630"
+                android:centerColor="@color/worker_button_selected"/>
+        </shape>
+    </item>
+</layer-list>
