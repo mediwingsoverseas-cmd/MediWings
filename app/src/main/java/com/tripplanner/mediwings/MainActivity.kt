@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         var isWorkerSelected = false
         
         // Get elevation values from resources for consistency
+        // resources.getDimension() automatically converts dp to pixels for use with View.elevation
         val elevationSelected = resources.getDimension(R.dimen.button_elevation_selected)
         val elevationInactive = resources.getDimension(R.dimen.button_elevation_inactive)
         
