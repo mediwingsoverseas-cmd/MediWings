@@ -452,51 +452,65 @@
                     </LinearLayout>
                 </ScrollView>
 
-                <!-- 4. Profile View -->
-                <ScrollView
+                <!-- 4. Profile View (Updated to match Worker Profile style) -->
+                <androidx.core.widget.NestedScrollView
                     android:id="@+id/profile_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:visibility="gone">
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:gravity="center_horizontal"
-                        android:padding="24dp">
+                        android:padding="16dp">
 
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="140dp"
-                            android:layout_height="140dp"
-                            app:cardCornerRadius="70dp"
-                            app:cardElevation="10dp"
-                            app:cardBackgroundColor="@color/white">
-                            <ImageView
-                                android:id="@+id/ivProfilePic"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:scaleType="centerCrop"
-                                android:src="@android:drawable/ic_menu_gallery"/>
-                        </androidx.cardview.widget.CardView>
-
-                        <TextView
-                            android:id="@+id/tvProfileName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="User Name"
-                            android:textColor="@color/primary_premium"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="20dp"
-                            android:fontFamily="serif"/>
-
+                        <!-- Profile Header Card -->
                         <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="30dp"
+                            android:layout_marginBottom="16dp"
                             app:cardCornerRadius="16dp"
                             app:cardElevation="4dp"
-                            app:cardBackgroundColor="@color/white">
+                            app:cardBackgroundColor="@color/primary_premium">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="24dp">
+
+                                <ImageView
+                                    android:id="@+id/ivProfilePic"
+                                    android:layout_width="120dp"
+                                    android:layout_height="120dp"
+                                    android:src="@drawable/ic_default_avatar"
+                                    android:layout_marginBottom="16dp"
+                                    android:contentDescription="Profile photo" />
+
+                                <Button
+                                    android:id="@+id/btnUploadProfilePhoto"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Change Photo"
+                                    android:textColor="@color/primary_premium"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textStyle="bold"
+                                    android:paddingHorizontal="24dp" />
+
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Profile Details Card -->
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="3dp"
+                            app:cardBackgroundColor="@color/background_card">
+
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -506,69 +520,111 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Profile Details"
-                                    android:textColor="@color/gold_premium"
+                                    android:text="Personal Information"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="18sp"
                                     android:textStyle="bold"
-                                    android:textSize="14sp"
-                                    android:textAllCaps="true"/>
+                                    android:layout_marginBottom="16dp" />
 
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="1dp"
-                                    android:background="#EEEEEE"
-                                    android:layout_marginVertical="12dp"/>
-
-                                <EditText
-                                    android:id="@+id/etProfileName"
-                                    android:layout_width="match_parent"
+                                <TextView
+                                    android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:hint="Full Name"
-                                    android:inputType="textPersonName"
-                                    android:textColor="@color/primary_premium"
-                                    android:background="@android:color/transparent"
-                                    android:padding="8dp"
-                                    android:drawableStart="@android:drawable/ic_menu_edit"
-                                    android:drawablePadding="12dp"/>
+                                    android:text="Name"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="4dp" />
 
-                                <EditText
-                                    android:id="@+id/etProfileMobile"
-                                    android:layout_width="match_parent"
+                                <TextView
+                                    android:id="@+id/tvProfileName"
+                                    android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:hint="Mobile Number"
-                                    android:inputType="phone"
-                                    android:textColor="@color/primary_premium"
-                                    android:background="@android:color/transparent"
-                                    android:padding="8dp"
-                                    android:layout_marginTop="12dp"
-                                    android:drawableStart="@android:drawable/ic_menu_call"
-                                    android:drawablePadding="12dp"/>
+                                    android:text="Student Name"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="16sp"
+                                    android:layout_marginBottom="16dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Email"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="4dp" />
 
                                 <TextView
                                     android:id="@+id/tvProfileEmail"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="student@example.com"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="16sp"
+                                    android:layout_marginBottom="16dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Mobile"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="4dp" />
+
+                                <TextView
+                                    android:id="@+id/tvProfileMobile"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="+1234567890"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="16sp"
+                                    android:layout_marginBottom="20dp" />
+
+                                <Button
+                                    android:id="@+id/btnEditProfile"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:text="email@example.com"
-                                    android:textColor="@color/gray"
-                                    android:textSize="16sp"
-                                    android:layout_marginTop="12dp"
-                                    android:padding="8dp"
-                                    android:drawableStart="@android:drawable/ic_dialog_email"
-                                    android:drawablePadding="12dp"/>
+                                    android:text="Edit Profile"
+                                    android:textColor="@color/white"
+                                    android:backgroundTint="@color/student_button"
+                                    android:textStyle="bold" />
+
                             </LinearLayout>
                         </androidx.cardview.widget.CardView>
 
-                        <Button
-                            android:id="@+id/btnUpdateProfile"
+                        <!-- Academic Information Section -->
+                        <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="24dp"
-                            android:text="Save Changes"
-                            android:backgroundTint="@color/primary_premium"
-                            android:textColor="@color/white"
-                            app:cornerRadius="12dp"/>
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="3dp"
+                            app:cardBackgroundColor="@color/background_card">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Academic Information"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"
+                                    android:layout_marginBottom="12dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Coming soon! You'll be able to add and showcase your academic details here."
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="14sp"
+                                    android:lineSpacingMultiplier="1.3" />
+
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
 
                     </LinearLayout>
-                </ScrollView>
+                </androidx.core.widget.NestedScrollView>
 
                 <!-- 5. Status View (VERTICAL PREMIUM) -->
                 <ScrollView
