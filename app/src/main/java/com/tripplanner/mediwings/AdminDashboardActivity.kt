@@ -158,13 +158,16 @@ class AdminDashboardActivity : AppCompatActivity() {
         val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
         
         // Count total users based on admin mode (single read)
-        database.reference.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+        // Workers are stored in "workers" node, students in "users" node
+        val dbNode = if (adminMode == "worker") "workers" else "users"
+        database.reference.child(dbNode).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
                     var userCount = 0
                     for (userSnapshot in snapshot.children) {
                         val role = userSnapshot.child("role").value?.toString()
-                        if (role == adminMode) {
+                        // Count users that are not admin
+                        if (role != "admin") {
                             userCount++
                         }
                     }

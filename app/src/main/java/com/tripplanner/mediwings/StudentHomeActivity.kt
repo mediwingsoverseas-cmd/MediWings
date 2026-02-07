@@ -296,9 +296,8 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     private fun loadUserData(navView: NavigationView) {
         val userId = auth.currentUser?.uid ?: return
         val tvName = findViewById<TextView>(R.id.tvProfileName)
-        val etName = findViewById<EditText>(R.id.etProfileName)
-        val etMobile = findViewById<EditText>(R.id.etProfileMobile)
         val tvEmail = findViewById<TextView>(R.id.tvProfileEmail)
+        val tvMobile = findViewById<TextView>(R.id.tvProfileMobile)
         val ivProfile = findViewById<ImageView>(R.id.ivProfilePic)
         val tvWelcome = findViewById<TextView>(R.id.tvWelcome)
         
@@ -312,13 +311,12 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                 if (snapshot.exists()) {
                     val name = snapshot.child("name").value?.toString() ?: ""
                     val email = snapshot.child("email").value?.toString() ?: ""
-                    val mobile = snapshot.child("mobile").value?.toString() ?: ""
+                    val mobile = snapshot.child("mobile").value?.toString() ?: "Not provided"
                     val pic = snapshot.child("profilePic").value?.toString()
 
                     tvName.text = name
-                    if (!etName.hasFocus()) etName.setText(name)
-                    if (!etMobile.hasFocus()) etMobile.setText(mobile)
                     tvEmail.text = email
+                    tvMobile.text = mobile
                     tvNavName.text = name
                     tvNavEmail.text = email
                     
@@ -333,28 +331,59 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             }
             override fun onCancelled(error: DatabaseError) {}
         })
-
-        ivProfile.setOnClickListener {
-            uploadType = "profile"
-            checkPermissionAndPickImage()
-        }
     }
 
     private fun setupProfileUpdate() {
-        findViewById<Button>(R.id.btnUpdateProfile).setOnClickListener {
-            val userId = auth.currentUser?.uid ?: return@setOnClickListener
-            val name = findViewById<EditText>(R.id.etProfileName).text.toString().trim()
-            val mobile = findViewById<EditText>(R.id.etProfileMobile).text.toString().trim()
-            
-            if (name.isNotEmpty() && mobile.isNotEmpty()) {
-                val updates = mapOf("name" to name, "mobile" to mobile)
-                database.child("users").child(userId).updateChildren(updates).addOnSuccessListener {
-                    Toast.makeText(this, "Profile Updated!", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                Toast.makeText(this, "Please enter name and mobile", Toast.LENGTH_SHORT).show()
-            }
+        // Setup upload profile photo button
+        findViewById<Button>(R.id.btnUploadProfilePhoto).setOnClickListener {
+            uploadType = "profile"
+            checkPermissionAndPickImage()
         }
+        
+        // Setup edit profile button
+        findViewById<Button>(R.id.btnEditProfile).setOnClickListener {
+            showEditProfileDialog()
+        }
+    }
+    
+    private fun showEditProfileDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Edit Profile")
+        
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(50, 40, 50, 10)
+        
+        val nameInput = EditText(this)
+        nameInput.hint = "Name"
+        nameInput.setText(findViewById<TextView>(R.id.tvProfileName).text)
+        layout.addView(nameInput)
+        
+        val mobileInput = EditText(this)
+        mobileInput.hint = "Mobile"
+        mobileInput.setText(findViewById<TextView>(R.id.tvProfileMobile).text)
+        layout.addView(mobileInput)
+        
+        builder.setView(layout)
+        
+        builder.setPositiveButton("Save") { _, _ ->
+            val userId = auth.currentUser?.uid ?: return@setPositiveButton
+            val updates = hashMapOf<String, Any>(
+                "name" to nameInput.text.toString(),
+                "mobile" to mobileInput.text.toString()
+            )
+            
+            database.child("users").child(userId).updateChildren(updates)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Failed to update: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+        }
+        
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
+        builder.show()
     }
 
     // Removed loadBanners() - now handled in setupBannersRecyclerView()

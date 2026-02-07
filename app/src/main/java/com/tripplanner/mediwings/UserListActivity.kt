@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -60,8 +61,10 @@ class UserListActivity : AppCompatActivity() {
         }
         rvUserList.adapter = adapter
 
-        // Load users
-        database.child("users").addValueEventListener(object : ValueEventListener {
+        // Load users from correct node based on role
+        // Workers are stored in "workers" node, students in "users" node
+        val dbNode = if (userRole == "worker") "workers" else "users"
+        database.child(dbNode).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
                     userList.clear()
@@ -71,9 +74,8 @@ class UserListActivity : AppCompatActivity() {
                         val uid = data.key ?: continue
                         val role = data.child("role").value?.toString() ?: ""
                         
-                        // Filter out admin users and users not matching the selected role
+                        // Filter out admin users
                         if (role.equals("admin", ignoreCase = true)) continue
-                        if (role != userRole) continue
                         
                         val name = data.child("name").value?.toString() ?: "Unknown"
                         val profilePic = data.child("profilePic").value?.toString() ?: ""
