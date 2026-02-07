@@ -23,7 +23,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:padding="12dp"
-                android:src="@android:drawable/ic_menu_revert"
+                android:src="@drawable/ic_back_arrow"
                 app:tint="@color/gold_premium" />
 
             <androidx.cardview.widget.CardView
@@ -100,7 +100,7 @@
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:alpha="0.3"
-            android:src="@android:drawable/ic_menu_send" />
+            android:src="@drawable/ic_send" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -130,7 +130,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:padding="8dp"
-                android:src="@android:drawable/ic_menu_attachment"
+                android:src="@drawable/ic_attachment"
                 app:tint="@color/gray"
                 android:contentDescription="Attach file" />
 
@@ -150,7 +150,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
-                android:src="@android:drawable/ic_menu_send"
+                android:src="@drawable/ic_send"
                 app:backgroundTint="@color/gold_premium"
                 app:fabSize="mini"
                 app:tint="@color/primary_premium" />

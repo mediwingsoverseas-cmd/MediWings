@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "363710894406",
+    "project_id": "mediwingsapp",
+    "storage_bucket": "mediwingsapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:363710894406:android:f918382a90f5687aff1547",
+        "android_client_info": {
+          "package_name": "com.tripplanner.mediwings"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC59uAoPWFqufjuwgqlJdv4C8IGvUg_W9Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

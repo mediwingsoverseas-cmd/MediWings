@@ -137,12 +137,16 @@ class ChatActivity : AppCompatActivity() {
         }
         
         // Final validation: ensure chatId is valid
-        if (chatId.isNullOrEmpty() || chatId.contains("null")) {
+        val currentChatId = chatId
+        if (currentChatId.isNullOrEmpty() || currentChatId.contains("null")) {
             Toast.makeText(this, "Invalid chat session. Please try again.", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
         
+        // Use currentChatId instead of chatId!! to avoid smart cast issues and unnecessary !!
+        val safeChatId = currentChatId
+
         otherUserName = intent.getStringExtra("USER_NAME") ?: "Support"
 
         rvMessages = findViewById(R.id.rvMessages)
@@ -167,7 +171,7 @@ class ChatActivity : AppCompatActivity() {
         rvMessages.layoutManager = layoutManager
         rvMessages.adapter = adapter
 
-        val messagesRef = database.child("Chats").child(chatId!!).child("messages")
+        val messagesRef = database.child("Chats").child(safeChatId).child("messages")
         messagesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
@@ -202,7 +206,7 @@ class ChatActivity : AppCompatActivity() {
         }
         messagesRef.addValueEventListener(messagesListener!!)
 
-        val metaRef = database.child("Chats").child(chatId!!).child("meta")
+        val metaRef = database.child("Chats").child(safeChatId).child("meta")
         metaListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
@@ -219,7 +223,7 @@ class ChatActivity : AppCompatActivity() {
         }
         metaRef.addValueEventListener(metaListener!!)
 
-        val onlineRef = database.child("users").child(if (isAdmin) chatId!! else "admin").child("online")
+        val onlineRef = database.child("users").child(if (isAdmin) safeChatId else "admin").child("online")
         onlineListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
@@ -271,6 +275,7 @@ class ChatActivity : AppCompatActivity() {
     }
     
     private fun sendTextMessage(text: String, messagesRef: DatabaseReference) {
+        val safeChatId = chatId ?: return
         val messageId = messagesRef.push().key
         if (messageId == null) {
             Toast.makeText(this, "Failed to generate message ID. Please try again.", Toast.LENGTH_SHORT).show()
@@ -295,7 +300,7 @@ class ChatActivity : AppCompatActivity() {
                 etMessage.setText("")
                 updateTypingStatus(false)
                 
-                val metaRef = database.child("Chats").child(chatId!!).child("meta")
+                val metaRef = database.child("Chats").child(safeChatId).child("meta")
                 val metaUpdates = hashMapOf<String, Any>(
                     "lastMessage" to text,
                     "lastMessageTime" to msg.timestamp,
@@ -312,6 +317,7 @@ class ChatActivity : AppCompatActivity() {
     }
     
     private fun sendMediaMessage(mediaUrl: String, mediaType: String, messagesRef: DatabaseReference) {
+        val safeChatId = chatId ?: return
         val messageId = messagesRef.push().key
         if (messageId == null) {
             Toast.makeText(this, "Failed to generate message ID. Please try again.", Toast.LENGTH_SHORT).show()
@@ -336,7 +342,7 @@ class ChatActivity : AppCompatActivity() {
         
         messagesRef.child(messageId).setValue(msg)
             .addOnSuccessListener {
-                val metaRef = database.child("Chats").child(chatId!!).child("meta")
+                val metaRef = database.child("Chats").child(safeChatId).child("meta")
                 val metaUpdates = hashMapOf<String, Any>(
                     "lastMessage" to displayText,
                     "lastMessageTime" to msg.timestamp,
@@ -374,6 +380,7 @@ class ChatActivity : AppCompatActivity() {
     }
     
     private fun uploadMedia(uri: Uri) {
+        val safeChatId = chatId ?: return
         Toast.makeText(this, "Uploading media...", Toast.LENGTH_SHORT).show()
         
         try {
@@ -398,13 +405,13 @@ class ChatActivity : AppCompatActivity() {
             
             val storageRef = storage.reference
                 .child("chat_media")
-                .child(chatId!!)
+                .child(safeChatId)
                 .child(filename)
             
             storageRef.putFile(uri)
                 .addOnSuccessListener {
                     storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                        val messagesRef = database.child("Chats").child(chatId!!).child("messages")
+                        val messagesRef = database.child("Chats").child(safeChatId).child("messages")
                         sendMediaMessage(downloadUri.toString(), "image", messagesRef)
                         Toast.makeText(this, "Media sent!", Toast.LENGTH_SHORT).show()
                     }.addOnFailureListener { exception ->
@@ -420,10 +427,11 @@ class ChatActivity : AppCompatActivity() {
     }
     
     private fun triggerNotification(messageText: String, messageType: String) {
+        val safeChatId = chatId ?: return
         // Get the recipient's FCM token
-        val recipientId = if (isAdmin) chatId else "admin"
+        val recipientId = if (isAdmin) safeChatId else "admin"
         
-        database.child("users").child(recipientId!!).child("fcmToken")
+        database.child("users").child(recipientId).child("fcmToken")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val token = snapshot.value?.toString()
@@ -437,7 +445,7 @@ class ChatActivity : AppCompatActivity() {
                             "title" to "${if (isAdmin) "Admin" else otherUserName}",
                             "body" to messageText,
                             "timestamp" to System.currentTimeMillis(),
-                            "chatId" to chatId!!,
+                            "chatId" to safeChatId,
                             "senderId" to currentUserId
                         )
                         
