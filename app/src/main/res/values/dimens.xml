@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Login Button Dimensions -->
+    <dimen name="button_elevation_selected">8dp</dimen>
+    <dimen name="button_elevation_inactive">0dp</dimen>
+</resources>

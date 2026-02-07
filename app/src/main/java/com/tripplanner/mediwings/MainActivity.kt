@@ -48,15 +48,19 @@ class MainActivity : AppCompatActivity() {
         
         var isWorkerSelected = false
         
+        // Get elevation values from resources for consistency
+        val elevationSelected = resources.getDimension(R.dimen.button_elevation_selected)
+        val elevationInactive = resources.getDimension(R.dimen.button_elevation_inactive)
+        
         // Initialize Student button as selected by default with elevation and visual effects
         btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
         btnRoleStudent.setTextColor(getColor(R.color.white))
-        btnRoleStudent.elevation = 8f
+        btnRoleStudent.elevation = elevationSelected
         btnRoleStudent.alpha = 1.0f
         
         btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
         btnRoleWorker.setTextColor(getColor(R.color.white))
-        btnRoleWorker.elevation = 0f
+        btnRoleWorker.elevation = elevationInactive
         btnRoleWorker.alpha = 0.6f
         
         // Set initial title for Student
@@ -76,7 +80,7 @@ class MainActivity : AppCompatActivity() {
                     .setDuration(200)
                     .start()
                 btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
-                btnRoleStudent.elevation = 8f
+                btnRoleStudent.elevation = elevationSelected
                 
                 // Animate Worker button to inactive state
                 btnRoleWorker.animate()
@@ -86,7 +90,7 @@ class MainActivity : AppCompatActivity() {
                     .setDuration(200)
                     .start()
                 btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
-                btnRoleWorker.elevation = 0f
+                btnRoleWorker.elevation = elevationInactive
                 
                 // Animate title sliding from left to right
                 animateTitleChange(tvAppName, tvTagline, "MediWings Student Portal", 
@@ -106,7 +110,7 @@ class MainActivity : AppCompatActivity() {
                     .setDuration(200)
                     .start()
                 btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_selected)
-                btnRoleWorker.elevation = 8f
+                btnRoleWorker.elevation = elevationSelected
                 
                 // Animate Student button to inactive state
                 btnRoleStudent.animate()
@@ -116,7 +120,7 @@ class MainActivity : AppCompatActivity() {
                     .setDuration(200)
                     .start()
                 btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_inactive)
-                btnRoleStudent.elevation = 0f
+                btnRoleStudent.elevation = elevationInactive
                 
                 // Animate title sliding from right to left
                 animateTitleChange(tvAppName, tvTagline, "MediWings Worker Portal", 
