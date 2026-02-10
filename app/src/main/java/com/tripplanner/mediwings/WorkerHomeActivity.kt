@@ -214,8 +214,8 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                         // Load profile image with error handling and placeholder
                         // This ensures images are displayed correctly from Firestore photoUrl field
                         // after upload and persist across app restarts
+                        val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
                         if (!photoUrl.isNullOrEmpty()) {
-                            val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
                             Glide.with(this@WorkerHomeActivity)
                                 .load(photoUrl)
                                 .placeholder(R.drawable.ic_default_avatar)
@@ -224,7 +224,6 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                                 .into(ivProfilePic)
                         } else {
                             // Show default avatar if no photo URL exists
-                            val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
                             Glide.with(this@WorkerHomeActivity)
                                 .load(R.drawable.ic_default_avatar)
                                 .circleCrop()
@@ -280,17 +279,16 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                 headerView.findViewById<TextView>(R.id.tvNavHeaderEmail).text = email
                 
                 // Load profile image from Realtime DB with error handling
-                profilePic?.let {
-                    val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
+                val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
+                if (profilePic != null) {
                     Glide.with(this@WorkerHomeActivity)
-                        .load(it)
+                        .load(profilePic)
                         .placeholder(R.drawable.ic_default_avatar)
                         .error(R.drawable.ic_default_avatar)
                         .circleCrop()
                         .into(ivProfilePic)
-                } ?: run {
+                } else {
                     // Show default avatar if no photo URL exists
-                    val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
                     Glide.with(this@WorkerHomeActivity)
                         .load(R.drawable.ic_default_avatar)
                         .circleCrop()
