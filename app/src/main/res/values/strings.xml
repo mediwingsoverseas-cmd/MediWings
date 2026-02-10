@@ -5,4 +5,19 @@
     <string name="new_user_create_account">New user? Create Account</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    
+    <!-- Status Control Page Strings -->
+    <string name="status_application">Application</string>
+    <string name="status_verification">Document Verification</string>
+    <string name="status_admission">University Admission</string>
+    <string name="status_visa">Visa</string>
+    <string name="status_visa_applied">Visa Applied</string>
+    <string name="status_visa_processing">Processing</string>
+    <string name="status_visa_approved">Approved</string>
+    <string name="status_flight">Flight Scheduled</string>
+    
+    <!-- Status Labels -->
+    <string name="status_completed">Completed</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_in_progress">In Progress</string>
 </resources>
