@@ -1,6 +1,7 @@
 package com.tripplanner.mediwings
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -8,12 +9,18 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
 
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
+    private lateinit var firestore: FirebaseFirestore
     private var isWorkerSelected = false
+    
+    companion object {
+        private const val TAG = "RegisterActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +35,7 @@ class RegisterActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
+        firestore = FirebaseFirestore.getInstance()
 
         val etName = findViewById<EditText>(R.id.etName)
         val etEmail = findViewById<EditText>(R.id.etRegEmail)
@@ -134,21 +142,48 @@ class RegisterActivity : AppCompatActivity() {
 
                         if (userId != null) {
                             val userType = if (isWorkerSelected) "workers" else "users"
-                            val userRef = database.reference.child(userType).child(userId)
+                            val role = if (isWorkerSelected) "worker" else "student"
+                            
+                            // Prepare user data
                             val userData = hashMapOf(
                                 "name" to name,
                                 "email" to email,
                                 "mobile" to mobile,
-                                "role" to if (isWorkerSelected) "worker" else "student"
+                                "role" to role,
+                                "photoUrl" to "" // Empty initially, will be updated on photo upload
                             )
+                            
+                            // Save to Realtime Database (for backward compatibility)
+                            val userRef = database.reference.child(userType).child(userId)
                             userRef.setValue(userData)
-                                .addOnCompleteListener { dbTask ->
-                                    if (dbTask.isSuccessful) {
-                                        Toast.makeText(this, "Registration successful! Please login.", Toast.LENGTH_LONG).show()
-                                        finish()
-                                    } else {
-                                        Toast.makeText(this, "Failed to save user data: ${dbTask.exception?.message}", Toast.LENGTH_LONG).show()
-                                    }
+                                .addOnSuccessListener {
+                                    Log.d(TAG, "User data saved to Realtime Database")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e(TAG, "Failed to save to Realtime Database", e)
+                                }
+                            
+                            // Save to Firestore (primary storage)
+                            val firestoreData = hashMapOf(
+                                "uid" to userId,
+                                "name" to name,
+                                "email" to email,
+                                "mobile" to mobile,
+                                "photoUrl" to "",
+                                "role" to role,
+                                "createdAt" to com.google.firebase.Timestamp.now()
+                            )
+                            
+                            firestore.collection("users").document(userId)
+                                .set(firestoreData)
+                                .addOnSuccessListener {
+                                    Log.d(TAG, "User data saved to Firestore successfully")
+                                    Toast.makeText(this, "Registration successful! Please login.", Toast.LENGTH_LONG).show()
+                                    finish()
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e(TAG, "Failed to save user data to Firestore", e)
+                                    Toast.makeText(this, "Failed to save user data: ${e.message}", Toast.LENGTH_LONG).show()
                                 }
                         } else {
                             Toast.makeText(this, "Registration failed: User ID is null", Toast.LENGTH_SHORT).show()

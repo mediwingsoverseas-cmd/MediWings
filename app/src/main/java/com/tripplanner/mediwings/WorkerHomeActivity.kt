@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
@@ -21,6 +22,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 
 class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -28,6 +30,7 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var auth: FirebaseAuth
     private lateinit var database: DatabaseReference
+    private lateinit var firestore: FirebaseFirestore
     private lateinit var storage: FirebaseStorage
     
     private lateinit var homeView: View
@@ -36,6 +39,10 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
     private lateinit var bottomNav: BottomNavigationView
     
     private var uploadType = "" // "resume", "certificate", "profile"
+    
+    companion object {
+        private const val TAG = "WorkerHomeActivity"
+    }
     
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { uploadDocument(it, uploadType) }
@@ -55,6 +62,7 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().reference
+        firestore = FirebaseFirestore.getInstance()
         storage = FirebaseStorage.getInstance()
 
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
@@ -134,6 +142,60 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
     private fun loadUserData(navView: NavigationView) {
         val userId = auth.currentUser?.uid ?: return
         
+        // Load user data from Firestore (primary source)
+        firestore.collection("users").document(userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error loading user data from Firestore", error)
+                    Toast.makeText(this, "Error loading profile: ${error.message}", Toast.LENGTH_SHORT).show()
+                    return@addSnapshotListener
+                }
+                
+                if (snapshot != null && snapshot.exists()) {
+                    try {
+                        val name = snapshot.getString("name") ?: "Worker"
+                        val email = snapshot.getString("email") ?: ""
+                        val mobile = snapshot.getString("mobile") ?: "Not provided"
+                        val photoUrl = snapshot.getString("photoUrl")
+                        
+                        // Update nav header
+                        val headerView = navView.getHeaderView(0)
+                        headerView.findViewById<TextView>(R.id.tvNavHeaderName).text = name
+                        headerView.findViewById<TextView>(R.id.tvNavHeaderEmail).text = email
+                        
+                        if (!photoUrl.isNullOrEmpty()) {
+                            val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
+                            Glide.with(this@WorkerHomeActivity).load(photoUrl).circleCrop().into(ivProfilePic)
+                        }
+                        
+                        // Update greeting
+                        findViewById<TextView>(R.id.tvWelcome).text = "Hello, $name!"
+                        
+                        // Update profile view
+                        findViewById<TextView>(R.id.tvProfileName).text = name
+                        findViewById<TextView>(R.id.tvProfileEmail).text = email
+                        findViewById<TextView>(R.id.tvProfileMobile).text = mobile
+                        
+                        if (!photoUrl.isNullOrEmpty()) {
+                            Glide.with(this@WorkerHomeActivity)
+                                .load(photoUrl)
+                                .circleCrop()
+                                .into(findViewById(R.id.ivProfilePhoto))
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing user data", e)
+                        Toast.makeText(this, "Error loading profile data", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Log.w(TAG, "User document does not exist in Firestore, trying Realtime Database")
+                    // Fallback to Realtime Database if Firestore data doesn't exist
+                    loadUserDataFromRealtimeDB(navView, userId)
+                }
+            }
+    }
+    
+    // Fallback method to load from Realtime Database
+    private fun loadUserDataFromRealtimeDB(navView: NavigationView, userId: String) {
         database.child("workers").child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val name = snapshot.child("name").value?.toString() ?: "Worker"
@@ -168,6 +230,7 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
             }
 
             override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Error loading from Realtime Database", error.toException())
                 Toast.makeText(this@WorkerHomeActivity, "Failed to load user data", Toast.LENGTH_SHORT).show()
             }
         })
@@ -253,19 +316,52 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                         else -> "workers/$userId/documents/$docType"
                     }
                     
+                    // Update Realtime Database (for backward compatibility)
                     database.child(path).setValue(downloadUri.toString())
                         .addOnSuccessListener {
-                            progressDialog.dismiss()
-                            Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
-                            
-                            // Reload data
-                            loadWorkerDocuments()
-                            loadUserData(findViewById(R.id.nav_view))
+                            Log.d(TAG, "Document uploaded to Realtime Database")
                         }
                         .addOnFailureListener { e ->
-                            progressDialog.dismiss()
-                            Toast.makeText(this, "Failed to save: ${e.message}", Toast.LENGTH_LONG).show()
+                            Log.e(TAG, "Failed to save to Realtime Database", e)
                         }
+                    
+                    // Update Firestore (primary storage) if it's a profile picture
+                    if (docType == "profile") {
+                        val updates = hashMapOf<String, Any>(
+                            "photoUrl" to downloadUri.toString(),
+                            "updatedAt" to com.google.firebase.Timestamp.now()
+                        )
+                        
+                        firestore.collection("users").document(userId)
+                            .update(updates)
+                            .addOnSuccessListener {
+                                Log.d(TAG, "Profile picture updated in Firestore successfully")
+                                progressDialog.dismiss()
+                                Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
+                                
+                                // Reload data
+                                loadWorkerDocuments()
+                                loadUserData(findViewById(R.id.nav_view))
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Failed to update profile picture in Firestore", e)
+                                // If document doesn't exist, try to create it
+                                if (e.message?.contains("NOT_FOUND") == true) {
+                                    createFirestoreWorkerDocumentWithPhoto(userId, downloadUri.toString())
+                                    progressDialog.dismiss()
+                                } else {
+                                    progressDialog.dismiss()
+                                    Toast.makeText(this, "Failed to save: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                    } else {
+                        progressDialog.dismiss()
+                        Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
+                        
+                        // Reload data
+                        loadWorkerDocuments()
+                        loadUserData(findViewById(R.id.nav_view))
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -329,18 +425,50 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
         
         builder.setPositiveButton("Save") { _, _ ->
             val userId = auth.currentUser?.uid ?: return@setPositiveButton
+            val name = nameInput.text.toString().trim()
+            val mobile = mobileInput.text.toString().trim()
+            
+            if (name.isEmpty() || mobile.isEmpty()) {
+                Toast.makeText(this, "Please enter name and mobile", Toast.LENGTH_SHORT).show()
+                return@setPositiveButton
+            }
+            
+            // Update Realtime Database (for backward compatibility)
             val updates = hashMapOf<String, Any>(
-                "name" to nameInput.text.toString(),
-                "mobile" to mobileInput.text.toString()
+                "name" to name,
+                "mobile" to mobile
             )
             
             database.child("workers").child(userId).updateChildren(updates)
                 .addOnSuccessListener {
+                    Log.d(TAG, "Profile updated in Realtime Database")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to update Realtime Database", e)
+                }
+            
+            // Update Firestore (primary storage)
+            val firestoreUpdates = hashMapOf<String, Any>(
+                "name" to name,
+                "mobile" to mobile,
+                "updatedAt" to com.google.firebase.Timestamp.now()
+            )
+            
+            firestore.collection("users").document(userId)
+                .update(firestoreUpdates)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Profile updated in Firestore successfully")
                     Toast.makeText(this, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
                     loadUserData(findViewById(R.id.nav_view))
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(this, "Failed to update: ${e.message}", Toast.LENGTH_LONG).show()
+                    Log.e(TAG, "Failed to update profile in Firestore", e)
+                    // If document doesn't exist, create it
+                    if (e.message?.contains("NOT_FOUND") == true) {
+                        createFirestoreWorkerDocument(userId, name, mobile)
+                    } else {
+                        Toast.makeText(this, "Failed to update: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
         }
         
@@ -375,6 +503,75 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
         }
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
+    }
+    
+    // Helper function to create Firestore user document if it doesn't exist
+    private fun createFirestoreWorkerDocument(userId: String, name: String, mobile: String) {
+        // Get email from current user
+        val email = auth.currentUser?.email ?: ""
+        
+        val firestoreData = hashMapOf(
+            "uid" to userId,
+            "name" to name,
+            "email" to email,
+            "mobile" to mobile,
+            "photoUrl" to "",
+            "role" to "worker",
+            "createdAt" to com.google.firebase.Timestamp.now(),
+            "updatedAt" to com.google.firebase.Timestamp.now()
+        )
+        
+        firestore.collection("users").document(userId)
+            .set(firestoreData)
+            .addOnSuccessListener {
+                Log.d(TAG, "Firestore user document created successfully")
+                Toast.makeText(this, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
+                loadUserData(findViewById(R.id.nav_view))
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to create Firestore user document", e)
+                Toast.makeText(this, "Failed to update profile: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+    
+    // Helper function to create Firestore user document with photo
+    private fun createFirestoreWorkerDocumentWithPhoto(userId: String, photoUrl: String) {
+        // Get email from current user
+        val email = auth.currentUser?.email ?: ""
+        
+        // Try to get name and mobile from Realtime Database
+        database.child("workers").child(userId).get()
+            .addOnSuccessListener { snapshot ->
+                val name = snapshot.child("name").value?.toString() ?: "Worker"
+                val mobile = snapshot.child("mobile").value?.toString() ?: ""
+                
+                val firestoreData = hashMapOf(
+                    "uid" to userId,
+                    "name" to name,
+                    "email" to email,
+                    "mobile" to mobile,
+                    "photoUrl" to photoUrl,
+                    "role" to "worker",
+                    "createdAt" to com.google.firebase.Timestamp.now(),
+                    "updatedAt" to com.google.firebase.Timestamp.now()
+                )
+                
+                firestore.collection("users").document(userId)
+                    .set(firestoreData)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Firestore user document created with photo successfully")
+                        Toast.makeText(this, "Profile picture uploaded successfully!", Toast.LENGTH_SHORT).show()
+                        loadUserData(findViewById(R.id.nav_view))
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to create Firestore user document with photo", e)
+                        Toast.makeText(this, "Failed to save profile picture: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to get user data from Realtime Database", e)
+                Toast.makeText(this, "Failed to save profile picture: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 
     override fun onBackPressed() {
