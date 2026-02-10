@@ -3,4 +3,51 @@
     <!-- Login Button Dimensions -->
     <dimen name="button_elevation_selected">8dp</dimen>
     <dimen name="button_elevation_inactive">0dp</dimen>
+    
+    <!-- Responsive Spacing -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    
+    <!-- Text Sizes (Responsive) -->
+    <dimen name="text_size_small">12sp</dimen>
+    <dimen name="text_size_medium">14sp</dimen>
+    <dimen name="text_size_large">16sp</dimen>
+    <dimen name="text_size_xl">18sp</dimen>
+    <dimen name="text_size_xxl">20sp</dimen>
+    <dimen name="text_size_title">24sp</dimen>
+    <dimen name="text_size_hero">32sp</dimen>
+    
+    <!-- Button Dimensions -->
+    <dimen name="button_height_small">40dp</dimen>
+    <dimen name="button_height_medium">50dp</dimen>
+    <dimen name="button_height_large">60dp</dimen>
+    <dimen name="button_min_width">120dp</dimen>
+    
+    <!-- Input Field Dimensions -->
+    <dimen name="input_height">55dp</dimen>
+    <dimen name="input_padding">16dp</dimen>
+    
+    <!-- Image Dimensions -->
+    <dimen name="profile_image_size">80dp</dimen>
+    <dimen name="profile_image_small">40dp</dimen>
+    <dimen name="icon_size_small">24dp</dimen>
+    <dimen name="icon_size_medium">32dp</dimen>
+    <dimen name="icon_size_large">48dp</dimen>
+    <dimen name="logo_size">150dp</dimen>
+    
+    <!-- Document Preview Dimensions -->
+    <dimen name="document_preview_height">200dp</dimen>
+    <dimen name="document_preview_max_height">300dp</dimen>
+    
+    <!-- Card Dimensions -->
+    <dimen name="card_corner_radius">8dp</dimen>
+    <dimen name="card_elevation">4dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    
+    <!-- Banner Dimensions -->
+    <dimen name="banner_height">180dp</dimen>
+    <dimen name="banner_width">320dp</dimen>
 </resources>
