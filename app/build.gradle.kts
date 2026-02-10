@@ -52,6 +52,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics-ktx") // Analytics for app insights
     implementation("com.google.firebase:firebase-auth-ktx") // Authentication service
     implementation("com.google.firebase:firebase-database-ktx") // Realtime Database
+    implementation("com.google.firebase:firebase-firestore-ktx") // Cloud Firestore for user records
     implementation("com.google.firebase:firebase-storage-ktx") // Cloud Storage for files/images
     implementation("com.google.firebase:firebase-messaging-ktx") // Cloud Messaging (FCM) for push notifications
     

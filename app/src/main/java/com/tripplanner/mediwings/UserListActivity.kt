@@ -2,6 +2,7 @@ package com.tripplanner.mediwings
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -21,15 +23,21 @@ class UserListActivity : AppCompatActivity() {
 
     private lateinit var rvUserList: RecyclerView
     private lateinit var database: DatabaseReference
+    private lateinit var firestore: FirebaseFirestore
     private var mode: String? = null // "chat" or "control"
     private var userRole: String = "student" // "student" or "worker"
     private lateinit var auth: FirebaseAuth
+    
+    companion object {
+        private const val TAG = "UserListActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_list)
 
         auth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
         mode = intent.getStringExtra("MODE")
         userRole = intent.getStringExtra("ROLE") ?: "student"
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
@@ -61,8 +69,57 @@ class UserListActivity : AppCompatActivity() {
         }
         rvUserList.adapter = adapter
 
-        // Load users from correct node based on role
-        // Workers are stored in "workers" node, students in "users" node
+        // Load users from Firestore (primary source)
+        firestore.collection("users")
+            .whereEqualTo("role", userRole)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error loading users from Firestore", error)
+                    // Fallback to Realtime Database
+                    loadUsersFromRealtimeDB(userList, adapter)
+                    return@addSnapshotListener
+                }
+                
+                if (snapshots != null) {
+                    try {
+                        userList.clear()
+                        val usersToLoad = mutableListOf<UserData>()
+                        
+                        for (document in snapshots.documents) {
+                            val uid = document.id
+                            val role = document.getString("role") ?: ""
+                            
+                            // Filter out admin users
+                            if (role.equals("admin", ignoreCase = true)) continue
+                            
+                            val name = document.getString("name") ?: "Unknown"
+                            val photoUrl = document.getString("photoUrl") ?: ""
+                            // Note: online status is still from Realtime Database
+                            val isOnline = false // Will be updated from Realtime DB if needed
+                            
+                            usersToLoad.add(UserData(uid, name, photoUrl, isOnline))
+                        }
+                        
+                        // Load chat metadata for each user
+                        if (usersToLoad.isNotEmpty()) {
+                            loadChatMetadata(usersToLoad, userList, adapter)
+                        } else {
+                            adapter.notifyDataSetChanged()
+                            Toast.makeText(this@UserListActivity, "No ${if (userRole == "worker") "workers" else "students"} found", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing user data from Firestore", e)
+                        Toast.makeText(this@UserListActivity, "Error loading users: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    Log.w(TAG, "No users found in Firestore, trying Realtime Database")
+                    loadUsersFromRealtimeDB(userList, adapter)
+                }
+            }
+    }
+    
+    // Fallback method to load from Realtime Database
+    private fun loadUsersFromRealtimeDB(userList: MutableList<UserDataWithChat>, adapter: UserAdapter) {
         val dbNode = if (userRole == "worker") "workers" else "users"
         database.child(dbNode).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -91,10 +148,12 @@ class UserListActivity : AppCompatActivity() {
                         Toast.makeText(this@UserListActivity, "No ${if (userRole == "worker") "workers" else "students"} found", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
+                    Log.e(TAG, "Error loading users from Realtime Database", e)
                     Toast.makeText(this@UserListActivity, "Error loading users: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
             override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Error loading users from Realtime Database", error.toException())
                 Toast.makeText(this@UserListActivity, "Failed to load users: ${error.message}", Toast.LENGTH_LONG).show()
             }
         })
