@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Landscape-specific dimensions for better horizontal space usage -->
+    
+    <!-- Login Button Dimensions -->
+    <dimen name="button_elevation_selected">8dp</dimen>
+    <dimen name="button_elevation_inactive">0dp</dimen>
+    
+    <!-- Responsive Spacing (Optimized for landscape) -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_medium">12dp</dimen>
+    <dimen name="spacing_large">16dp</dimen>
+    <dimen name="spacing_xl">24dp</dimen>
+    
+    <!-- Text Sizes -->
+    <dimen name="text_size_small">11sp</dimen>
+    <dimen name="text_size_medium">13sp</dimen>
+    <dimen name="text_size_large">15sp</dimen>
+    <dimen name="text_size_xl">17sp</dimen>
+    <dimen name="text_size_xxl">19sp</dimen>
+    <dimen name="text_size_title">22sp</dimen>
+    <dimen name="text_size_hero">28sp</dimen>
+    
+    <!-- Button Dimensions -->
+    <dimen name="button_height_small">36dp</dimen>
+    <dimen name="button_height_medium">44dp</dimen>
+    <dimen name="button_height_large">52dp</dimen>
+    <dimen name="button_min_width">120dp</dimen>
+    
+    <!-- Input Field Dimensions -->
+    <dimen name="input_height">48dp</dimen>
+    <dimen name="input_padding">14dp</dimen>
+    
+    <!-- Image Dimensions (Smaller in landscape to fit) -->
+    <dimen name="profile_image_size">60dp</dimen>
+    <dimen name="profile_image_small">32dp</dimen>
+    <dimen name="icon_size_small">20dp</dimen>
+    <dimen name="icon_size_medium">28dp</dimen>
+    <dimen name="icon_size_large">40dp</dimen>
+    <dimen name="logo_size">100dp</dimen>
+    
+    <!-- Document Preview Dimensions -->
+    <dimen name="document_preview_height">150dp</dimen>
+    <dimen name="document_preview_max_height">200dp</dimen>
+    
+    <!-- Card Dimensions -->
+    <dimen name="card_corner_radius">8dp</dimen>
+    <dimen name="card_elevation">4dp</dimen>
+    <dimen name="card_padding">12dp</dimen>
+    
+    <!-- Banner Dimensions -->
+    <dimen name="banner_height">140dp</dimen>
+    <dimen name="banner_width">280dp</dimen>
+</resources>

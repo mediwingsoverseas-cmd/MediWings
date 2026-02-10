@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablet-specific dimensions (sw600dp = 7" tablets and larger) -->
+    
+    <!-- Login Button Dimensions -->
+    <dimen name="button_elevation_selected">12dp</dimen>
+    <dimen name="button_elevation_inactive">0dp</dimen>
+    
+    <!-- Responsive Spacing (Larger for tablets) -->
+    <dimen name="spacing_xs">6dp</dimen>
+    <dimen name="spacing_small">12dp</dimen>
+    <dimen name="spacing_medium">24dp</dimen>
+    <dimen name="spacing_large">32dp</dimen>
+    <dimen name="spacing_xl">48dp</dimen>
+    
+    <!-- Text Sizes (Larger for tablets) -->
+    <dimen name="text_size_small">14sp</dimen>
+    <dimen name="text_size_medium">16sp</dimen>
+    <dimen name="text_size_large">18sp</dimen>
+    <dimen name="text_size_xl">20sp</dimen>
+    <dimen name="text_size_xxl">24sp</dimen>
+    <dimen name="text_size_title">32sp</dimen>
+    <dimen name="text_size_hero">42sp</dimen>
+    
+    <!-- Button Dimensions -->
+    <dimen name="button_height_small">48dp</dimen>
+    <dimen name="button_height_medium">60dp</dimen>
+    <dimen name="button_height_large">72dp</dimen>
+    <dimen name="button_min_width">160dp</dimen>
+    
+    <!-- Input Field Dimensions -->
+    <dimen name="input_height">65dp</dimen>
+    <dimen name="input_padding">20dp</dimen>
+    
+    <!-- Image Dimensions -->
+    <dimen name="profile_image_size">120dp</dimen>
+    <dimen name="profile_image_small">60dp</dimen>
+    <dimen name="icon_size_small">32dp</dimen>
+    <dimen name="icon_size_medium">48dp</dimen>
+    <dimen name="icon_size_large">64dp</dimen>
+    <dimen name="logo_size">200dp</dimen>
+    
+    <!-- Document Preview Dimensions -->
+    <dimen name="document_preview_height">300dp</dimen>
+    <dimen name="document_preview_max_height">400dp</dimen>
+    
+    <!-- Card Dimensions -->
+    <dimen name="card_corner_radius">12dp</dimen>
+    <dimen name="card_elevation">6dp</dimen>
+    <dimen name="card_padding">24dp</dimen>
+    
+    <!-- Banner Dimensions -->
+    <dimen name="banner_height">240dp</dimen>
+    <dimen name="banner_width">480dp</dimen>
+</resources>
