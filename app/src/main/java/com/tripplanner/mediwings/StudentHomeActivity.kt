@@ -671,7 +671,9 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_home -> {
-                // Already on home, just close drawer
+                // Navigate to home view and update bottom nav
+                showView("home")
+                bottomNav.selectedItemId = R.id.nav_home_tab
             }
             R.id.nav_chat -> {
                 val intent = Intent(this, ChatActivity::class.java)

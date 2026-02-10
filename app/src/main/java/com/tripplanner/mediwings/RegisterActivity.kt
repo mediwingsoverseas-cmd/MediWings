@@ -38,21 +38,76 @@ class RegisterActivity : AppCompatActivity() {
         val btnRoleStudent = findViewById<Button>(R.id.btnRoleStudent)
         val btnRoleWorker = findViewById<Button>(R.id.btnRoleWorker)
         
+        // Get elevation values from resources for consistency
+        val elevationSelected = resources.getDimension(R.dimen.button_elevation_selected)
+        val elevationInactive = resources.getDimension(R.dimen.button_elevation_inactive)
+        
+        // Initialize Student button as selected by default with elevation and visual effects
+        btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
+        btnRoleStudent.setTextColor(getColor(R.color.white))
+        btnRoleStudent.elevation = elevationSelected
+        btnRoleStudent.alpha = 1.0f
+        
+        btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
+        btnRoleWorker.setTextColor(getColor(R.color.white))
+        btnRoleWorker.elevation = elevationInactive
+        btnRoleWorker.alpha = 0.6f
+        
         // Toggle button behavior - Student is selected by default
         btnRoleStudent.setOnClickListener {
-            isWorkerSelected = false
-            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button_selected))
-            btnRoleStudent.setTextColor(getColor(R.color.white))
-            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button))
-            btnRoleWorker.setTextColor(getColor(R.color.white))
+            if (isWorkerSelected) {
+                isWorkerSelected = false
+                
+                // Set backgrounds first to avoid flicker
+                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_selected)
+                btnRoleStudent.elevation = elevationSelected
+                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_inactive)
+                btnRoleWorker.elevation = elevationInactive
+                
+                // Animate Student button to selected state
+                btnRoleStudent.animate()
+                    .alpha(1.0f)
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .start()
+                
+                // Animate Worker button to inactive state
+                btnRoleWorker.animate()
+                    .alpha(0.6f)
+                    .scaleX(0.98f)
+                    .scaleY(0.98f)
+                    .setDuration(200)
+                    .start()
+            }
         }
         
         btnRoleWorker.setOnClickListener {
-            isWorkerSelected = true
-            btnRoleWorker.setBackgroundColor(getColor(R.color.worker_button_selected))
-            btnRoleWorker.setTextColor(getColor(R.color.white))
-            btnRoleStudent.setBackgroundColor(getColor(R.color.student_button))
-            btnRoleStudent.setTextColor(getColor(R.color.white))
+            if (!isWorkerSelected) {
+                isWorkerSelected = true
+                
+                // Set backgrounds first to avoid flicker
+                btnRoleWorker.setBackgroundResource(R.drawable.bg_button_worker_selected)
+                btnRoleWorker.elevation = elevationSelected
+                btnRoleStudent.setBackgroundResource(R.drawable.bg_button_student_inactive)
+                btnRoleStudent.elevation = elevationInactive
+                
+                // Animate Worker button to selected state
+                btnRoleWorker.animate()
+                    .alpha(1.0f)
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .start()
+                
+                // Animate Student button to inactive state
+                btnRoleStudent.animate()
+                    .alpha(0.6f)
+                    .scaleX(0.98f)
+                    .scaleY(0.98f)
+                    .setDuration(200)
+                    .start()
+            }
         }
 
         btnRegister.setOnClickListener {

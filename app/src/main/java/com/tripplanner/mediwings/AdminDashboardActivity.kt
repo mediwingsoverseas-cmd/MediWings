@@ -157,55 +157,73 @@ class AdminDashboardActivity : AppCompatActivity() {
         val tvTotalStudents = findViewById<TextView>(R.id.tvTotalStudents)
         val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
         
-        // Count total users based on admin mode (single read)
-        // Workers are stored in "workers" node, students in "users" node
-        val dbNode = if (adminMode == "worker") "workers" else "users"
-        database.reference.child(dbNode).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                try {
-                    var userCount = 0
-                    for (userSnapshot in snapshot.children) {
-                        val role = userSnapshot.child("role").value?.toString()
-                        // Count users that are not admin
-                        if (role != "admin") {
-                            userCount++
+        // Initialize with loading state
+        tvTotalStudents.text = "..."
+        tvActiveChats.text = "..."
+        
+        try {
+            // Count total users based on admin mode (single read)
+            // Workers are stored in "workers" node, students in "users" node
+            val dbNode = if (adminMode == "worker") "workers" else "users"
+            database.reference.child(dbNode).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    try {
+                        if (!snapshot.exists()) {
+                            tvTotalStudents.text = "0"
+                            return
                         }
+                        var userCount = 0
+                        for (userSnapshot in snapshot.children) {
+                            val role = userSnapshot.child("role").value?.toString()
+                            // Count users that are not admin
+                            if (role != "admin") {
+                                userCount++
+                            }
+                        }
+                        tvTotalStudents.text = userCount.toString()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@AdminDashboardActivity, "Error loading user stats: ${e.message}", Toast.LENGTH_SHORT).show()
+                        tvTotalStudents.text = "0"
                     }
-                    tvTotalStudents.text = userCount.toString()
-                } catch (e: Exception) {
-                    Toast.makeText(this@AdminDashboardActivity, "Error loading user stats", Toast.LENGTH_SHORT).show()
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(this@AdminDashboardActivity, "Failed to load user stats: ${error.message}", Toast.LENGTH_SHORT).show()
                     tvTotalStudents.text = "0"
                 }
-            }
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(this@AdminDashboardActivity, "Failed to load user stats: ${error.message}", Toast.LENGTH_SHORT).show()
-                tvTotalStudents.text = "0"
-            }
-        })
-        
-        // Count active chats for this role (single read)
-        database.reference.child("Chats").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                try {
-                    var chatCount = 0
-                    for (chatSnapshot in snapshot.children) {
-                        val chatId = chatSnapshot.key ?: continue
-                        // Check if chat ID ends with the current admin mode (role)
-                        if (chatId.endsWith("_$adminMode")) {
-                            chatCount++
+            })
+            
+            // Count active chats for this role (single read)
+            database.reference.child("Chats").addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    try {
+                        if (!snapshot.exists()) {
+                            tvActiveChats.text = "0"
+                            return
                         }
+                        var chatCount = 0
+                        for (chatSnapshot in snapshot.children) {
+                            val chatId = chatSnapshot.key ?: continue
+                            // Check if chat ID ends with the current admin mode (role)
+                            if (chatId.endsWith("_$adminMode")) {
+                                chatCount++
+                            }
+                        }
+                        tvActiveChats.text = chatCount.toString()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@AdminDashboardActivity, "Error loading chat stats: ${e.message}", Toast.LENGTH_SHORT).show()
+                        tvActiveChats.text = "0"
                     }
-                    tvActiveChats.text = chatCount.toString()
-                } catch (e: Exception) {
-                    Toast.makeText(this@AdminDashboardActivity, "Error loading chat stats", Toast.LENGTH_SHORT).show()
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(this@AdminDashboardActivity, "Failed to load chat stats: ${error.message}", Toast.LENGTH_SHORT).show()
                     tvActiveChats.text = "0"
                 }
-            }
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(this@AdminDashboardActivity, "Failed to load chat stats: ${error.message}", Toast.LENGTH_SHORT).show()
-                tvActiveChats.text = "0"
-            }
-        })
+            })
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error initializing dashboard: ${e.message}", Toast.LENGTH_LONG).show()
+            tvTotalStudents.text = "0"
+            tvActiveChats.text = "0"
+        }
     }
     
     private fun showImageUrlDialog() {

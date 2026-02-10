@@ -52,14 +52,14 @@
     <color name="purple_200">#D4AF37</color>
     <color name="purple_500">#0D1B2A</color>
     
-    <!-- Login Button Colors - Modern Deep Accent Tones -->
-    <!-- Student Button Colors - Deep Teal/Blue -->
-    <color name="student_button">#0D47A1</color>
-    <color name="student_button_selected">#0D47A1</color>  <!-- Rich Deep Blue - selected Student -->
-    <color name="student_button_inactive">#90A4C0</color>  <!-- Desaturated Blue - inactive Student -->
+    <!-- Login Button Colors - Gold Theme -->
+    <!-- Student Button Colors - Gold -->
+    <color name="student_button">#D4AF37</color>
+    <color name="student_button_selected">#D4AF37</color>  <!-- Rich Gold - selected Student -->
+    <color name="student_button_inactive">#9B8B5A</color>  <!-- Dim Gold - inactive Student -->
     
-    <!-- Worker Button Colors - Deep Emerald/Teal -->
-    <color name="worker_button">#004D40</color>
-    <color name="worker_button_selected">#004D40</color>   <!-- Rich Deep Teal - selected Worker -->
-    <color name="worker_button_inactive">#80A89F</color>   <!-- Desaturated Teal - inactive Worker -->
+    <!-- Worker Button Colors - Gold -->
+    <color name="worker_button">#D4AF37</color>
+    <color name="worker_button_selected">#D4AF37</color>   <!-- Rich Gold - selected Worker -->
+    <color name="worker_button_inactive">#9B8B5A</color>   <!-- Dim Gold - inactive Worker -->
 </resources>
