@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablet/Large Screen Dimensions -->
+    
+    <!-- Responsive Logo Dimensions -->
+    <dimen name="logo_size">180dp</dimen>
+    <dimen name="logo_margin_bottom">24dp</dimen>
+    
+    <!-- Responsive Text Sizes -->
+    <dimen name="app_title_text_size">48sp</dimen>
+    <dimen name="tagline_text_size">18sp</dimen>
+    <dimen name="button_text_size">16sp</dimen>
+    <dimen name="input_text_size">18sp</dimen>
+    
+    <!-- Spacing -->
+    <dimen name="standard_padding">24dp</dimen>
+    <dimen name="standard_margin">24dp</dimen>
+    <dimen name="input_height">65dp</dimen>
+    <dimen name="button_height">60dp</dimen>
+    <dimen name="login_button_height">68dp</dimen>
+</resources>

@@ -115,9 +115,11 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     private lateinit var bottomNav: BottomNavigationView
     
     private var uploadType = "" // "photos", "aadhar", "passport", "hiv", "profile"
+    private var progressDialog: ProgressDialog? = null // Track progress dialog for proper cleanup
     
     companion object {
         private const val TAG = "StudentHomeActivity"
+        private val VALID_UPLOAD_TYPES = setOf("photos", "aadhar", "passport", "hiv", "profile")
     }
 
     private lateinit var rvBannersHome: RecyclerView
@@ -717,11 +719,21 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             return
         }
         
+        // Validate upload type
+        if (type !in VALID_UPLOAD_TYPES) {
+            Toast.makeText(this, "Invalid upload type: $type", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Invalid upload type attempted: $type")
+            return
+        }
+        
+        // Dismiss any existing progress dialog before showing new one
+        progressDialog?.dismiss()
+        
         // Show uploading dialog
-        val progressDialog = ProgressDialog(this)
-        progressDialog.setMessage("Uploading ${type}...")
-        progressDialog.setCancelable(false)
-        progressDialog.show()
+        progressDialog = ProgressDialog(this)
+        progressDialog?.setMessage("Uploading ${type}...")
+        progressDialog?.setCancelable(false)
+        progressDialog?.show()
         
         // Create unique filename with timestamp to avoid conflicts
         val timestamp = System.currentTimeMillis()
@@ -738,7 +750,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
             .addOnSuccessListener { taskSnapshot ->
                 // Get download URL after successful upload
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    progressDialog.dismiss()
+                    progressDialog?.dismiss()
                     
                     // Save URL to database based on type
                     if (type == "profile") {
@@ -786,27 +798,42 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                                 }
                             }
                     } else {
+                        // For documents, update both Realtime Database and Firestore for consistency
                         database.child("users").child(userId).child("documents").child(type)
                             .setValue(downloadUri.toString())
                             .addOnSuccessListener {
+                                Log.d(TAG, "$type document updated in Realtime Database")
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Failed to update $type in Realtime Database", e)
+                            }
+                        
+                        // Update Firestore document field as well
+                        val documentField = "documents.$type"
+                        firestore.collection("users").document(userId)
+                            .update(documentField, downloadUri.toString())
+                            .addOnSuccessListener {
+                                Log.d(TAG, "$type document updated in Firestore successfully")
                                 Toast.makeText(this, "$type uploaded successfully!", Toast.LENGTH_SHORT).show()
                             }
-                            .addOnFailureListener { exception ->
-                                Toast.makeText(this, "Failed to save $type: ${exception.message}", Toast.LENGTH_LONG).show()
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Failed to update $type in Firestore", e)
+                                // Still show success since Realtime DB update succeeded
+                                Toast.makeText(this, "$type uploaded successfully!", Toast.LENGTH_SHORT).show()
                             }
                     }
                 }.addOnFailureListener { exception ->
-                    progressDialog.dismiss()
+                    progressDialog?.dismiss()
                     Toast.makeText(this, "Failed to get download URL: ${exception.message}", Toast.LENGTH_LONG).show()
                 }
             }
             .addOnFailureListener { exception ->
-                progressDialog.dismiss()
+                progressDialog?.dismiss()
                 Toast.makeText(this, "Upload failed: ${exception.message}", Toast.LENGTH_LONG).show()
             }
             .addOnProgressListener { taskSnapshot ->
                 val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                progressDialog.setMessage("Uploading ${type}... $progress%")
+                progressDialog?.setMessage("Uploading ${type}... $progress%")
             }
     }
 
@@ -1012,6 +1039,9 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     override fun onDestroy() {
         super.onDestroy()
         scrollHandler.removeCallbacksAndMessages(null)
+        // Dismiss progress dialog if showing to prevent window leak
+        progressDialog?.dismiss()
+        progressDialog = null
     }
 
     private class UniversityHomeAdapter(private val list: List<UniversitiesListActivity.University>) : RecyclerView.Adapter<UniversityHomeAdapter.ViewHolder>() {

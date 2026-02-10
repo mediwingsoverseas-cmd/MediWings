@@ -1,70 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp"
+    android:fillViewport="true"
     android:background="@color/primary_premium">
 
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/standard_padding">
+
     <ImageView
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="@dimen/logo_size"
+        android:layout_height="@dimen/logo_size"
         android:src="@drawable/mediwings_logo"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="@dimen/logo_margin_bottom"
         android:alpha="0.8"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
         android:contentDescription="@string/app_logo"/>
 
     <TextView
         android:id="@+id/tvAppName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="8dp"
         android:fontFamily="cursive"
-        android:letterSpacing="0.1"
+        android:letterSpacing="0.05"
         android:text="MediWings Student Portal"
         android:textColor="@color/gold_premium"
-        android:textSize="48sp"
+        android:textSize="@dimen/app_title_text_size"
         android:textStyle="bold"
-        android:gravity="center" />
+        android:gravity="center"
+        android:maxLines="2"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="24sp"
+        android:autoSizeMaxTextSize="48sp"
+        android:autoSizeStepGranularity="2sp" />
 
     <TextView
         android:id="@+id/tvTagline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="@dimen/standard_margin"
         android:text="Your Gateway to Medical Education Abroad"
         android:textColor="@color/gold_light"
-        android:textSize="16sp"
+        android:textSize="@dimen/tagline_text_size"
         android:gravity="center"
-        android:alpha="0.9"/>
+        android:alpha="0.9"
+        android:maxLines="2"/>
 
     <EditText
         android:id="@+id/etEmail"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="@dimen/input_height"
         android:hint="Email Address"
         android:inputType="textEmailAddress"
-        android:padding="16dp"
+        android:padding="@dimen/standard_padding"
         android:background="@drawable/edit_text_background"
         android:textColor="#333333"
         android:textColorHint="#999999"
-        android:layout_marginBottom="16dp"
+        android:textSize="@dimen/input_text_size"
+        android:layout_marginBottom="@dimen/standard_margin"
         android:drawableStart="@drawable/ic_email"
         android:drawablePadding="12dp"/>
 
     <EditText
         android:id="@+id/etPassword"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="@dimen/input_height"
         android:hint="Password"
         android:inputType="textPassword"
-        android:padding="16dp"
+        android:padding="@dimen/standard_padding"
         android:background="@drawable/edit_text_background"
         android:textColor="#333333"
         android:textColorHint="#999999"
-        android:layout_marginBottom="16dp"
+        android:textSize="@dimen/input_text_size"
+        android:layout_marginBottom="@dimen/standard_margin"
         android:drawableStart="@android:drawable/ic_lock_lock"
         android:drawablePadding="12dp"/>
 
@@ -73,7 +88,7 @@
         android:layout_height="wrap_content"
         android:text="Login As"
         android:textColor="@color/gold_premium"
-        android:textSize="14sp"
+        android:textSize="@dimen/button_text_size"
         android:textStyle="bold"
         android:layout_marginBottom="8dp"/>
 
@@ -82,18 +97,19 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="@dimen/standard_margin">
 
         <Button
             android:id="@+id/btnRoleStudent"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="@dimen/button_height"
             android:layout_weight="1"
             android:text="STUDENT"
-            android:textSize="14sp"
+            android:textSize="@dimen/button_text_size"
             android:textStyle="bold"
             android:textColor="@color/white"
             android:layout_marginEnd="8dp"
+            android:backgroundTint="@color/gold"
             app:icon="@drawable/ic_student"
             app:iconTint="@color/white"
             style="@style/Widget.Material3.Button"/>
@@ -101,12 +117,13 @@
         <Button
             android:id="@+id/btnRoleWorker"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="@dimen/button_height"
             android:layout_weight="1"
             android:text="WORKER"
-            android:textSize="14sp"
+            android:textSize="@dimen/button_text_size"
             android:textStyle="bold"
             android:textColor="@color/white"
+            android:backgroundTint="@color/gold"
             app:icon="@drawable/ic_worker"
             app:iconTint="@color/white"
             style="@style/Widget.Material3.Button"/>
@@ -116,9 +133,9 @@
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="@dimen/login_button_height"
         android:text="LOGIN"
-        android:textSize="16sp"
+        android:textSize="@dimen/button_text_size"
         android:textStyle="bold"
         android:textColor="@color/primary_premium"
         android:backgroundTint="@color/gold_premium"/>
@@ -129,8 +146,9 @@
         android:layout_height="wrap_content"
         android:text="@string/new_user_create_account"
         android:textColor="@color/gold_premium"
-        android:textSize="16sp"
-        android:padding="16dp"
-        android:layout_marginTop="16dp"/>
+        android:textSize="@dimen/button_text_size"
+        android:padding="@dimen/standard_padding"
+        android:layout_marginTop="8dp"/>
 
 </LinearLayout>
+</ScrollView>
