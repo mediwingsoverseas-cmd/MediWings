@@ -1,5 +1,53 @@
 package com.tripplanner.mediwings
 
+/**
+ * PROFILE IMAGE DISPLAY DOCUMENTATION FOR WORKERS
+ * ================================================
+ * 
+ * This file implements robust image loading for worker users, following the same
+ * architecture as StudentHomeActivity for consistency across user roles.
+ * 
+ * IMAGE STORAGE ARCHITECTURE:
+ * ---------------------------
+ * 1. Firebase Storage Path: workers/{userId}/profile/{timestamp}
+ * 2. Firestore Document: users/{userId}
+ *    - photoUrl (String): Primary storage for profile image download URL
+ *    - updatedAt (Timestamp): Last update timestamp
+ * 3. Realtime Database (Fallback): workers/{userId}/profilePic
+ * 
+ * UPLOAD FLOW:
+ * ------------
+ * 1. User selects image via pickImageLauncher
+ * 2. Image validated (must be < 1MB) in uploadDocument()
+ * 3. Image uploaded to Firebase Storage (workers/{userId}/profile/ path)
+ * 4. Download URL obtained from storageRef.downloadUrl
+ * 5. URL saved to BOTH databases:
+ *    - Firestore: firestore.collection("users").document(userId).update("photoUrl", url)
+ *    - Realtime DB: database.child("workers/{userId}/profilePic").setValue(url)
+ * 6. UI updated via loadUserData() and loadWorkerDocuments()
+ * 
+ * DISPLAY FLOW:
+ * -------------
+ * 1. Primary: Load from Firestore photoUrl via loadUserData()
+ * 2. Fallback: Load from Realtime DB via loadUserDataFromRealtimeDB()
+ * 3. Glide loading configuration:
+ *    - .placeholder(R.drawable.ic_default_avatar): Loading state
+ *    - .error(R.drawable.ic_default_avatar): Error state
+ *    - .circleCrop(): Circular profile format
+ * 4. Display locations:
+ *    - Navigation drawer header (ivNavHeaderProfile)
+ *    - Profile section (ivProfilePhoto)
+ * 
+ * ERROR HANDLING:
+ * ---------------
+ * - Activity lifecycle checks (!isFinishing && !isDestroyed) prevent crashes
+ * - Default avatar shown for missing/failed images
+ * - Toast notifications for upload failures
+ * - Automatic fallback to Realtime DB if Firestore unavailable
+ * 
+ * See StudentHomeActivity for additional documentation and testing checklist.
+ */
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -163,9 +211,23 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                         headerView.findViewById<TextView>(R.id.tvNavHeaderName).text = name
                         headerView.findViewById<TextView>(R.id.tvNavHeaderEmail).text = email
                         
+                        // Load profile image with error handling and placeholder
+                        // This ensures images are displayed correctly from Firestore photoUrl field
+                        // after upload and persist across app restarts
+                        val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
                         if (!photoUrl.isNullOrEmpty()) {
-                            val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
-                            Glide.with(this@WorkerHomeActivity).load(photoUrl).circleCrop().into(ivProfilePic)
+                            Glide.with(this@WorkerHomeActivity)
+                                .load(photoUrl)
+                                .placeholder(R.drawable.ic_default_avatar)
+                                .error(R.drawable.ic_default_avatar)
+                                .circleCrop()
+                                .into(ivProfilePic)
+                        } else {
+                            // Show default avatar if no photo URL exists
+                            Glide.with(this@WorkerHomeActivity)
+                                .load(R.drawable.ic_default_avatar)
+                                .circleCrop()
+                                .into(ivProfilePic)
                         }
                         
                         // Update greeting
@@ -176,9 +238,18 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                         findViewById<TextView>(R.id.tvProfileEmail).text = email
                         findViewById<TextView>(R.id.tvProfileMobile).text = mobile
                         
+                        // Load profile photo with error handling
                         if (!photoUrl.isNullOrEmpty()) {
                             Glide.with(this@WorkerHomeActivity)
                                 .load(photoUrl)
+                                .placeholder(R.drawable.ic_default_avatar)
+                                .error(R.drawable.ic_default_avatar)
+                                .circleCrop()
+                                .into(findViewById(R.id.ivProfilePhoto))
+                        } else {
+                            // Show default avatar if no photo URL exists
+                            Glide.with(this@WorkerHomeActivity)
+                                .load(R.drawable.ic_default_avatar)
                                 .circleCrop()
                                 .into(findViewById(R.id.ivProfilePhoto))
                         }
@@ -207,9 +278,21 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                 headerView.findViewById<TextView>(R.id.tvNavHeaderName).text = name
                 headerView.findViewById<TextView>(R.id.tvNavHeaderEmail).text = email
                 
-                profilePic?.let {
-                    val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
-                    Glide.with(this@WorkerHomeActivity).load(it).circleCrop().into(ivProfilePic)
+                // Load profile image from Realtime DB with error handling
+                val ivProfilePic = headerView.findViewById<ImageView>(R.id.ivNavHeaderProfile)
+                if (profilePic != null) {
+                    Glide.with(this@WorkerHomeActivity)
+                        .load(profilePic)
+                        .placeholder(R.drawable.ic_default_avatar)
+                        .error(R.drawable.ic_default_avatar)
+                        .circleCrop()
+                        .into(ivProfilePic)
+                } else {
+                    // Show default avatar if no photo URL exists
+                    Glide.with(this@WorkerHomeActivity)
+                        .load(R.drawable.ic_default_avatar)
+                        .circleCrop()
+                        .into(ivProfilePic)
                 }
                 
                 // Update greeting
@@ -221,9 +304,18 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                 val mobile = snapshot.child("mobile").value?.toString() ?: "Not provided"
                 findViewById<TextView>(R.id.tvProfileMobile).text = mobile
                 
+                // Load profile photo from Realtime DB with error handling
                 profilePic?.let {
                     Glide.with(this@WorkerHomeActivity)
                         .load(it)
+                        .placeholder(R.drawable.ic_default_avatar)
+                        .error(R.drawable.ic_default_avatar)
+                        .circleCrop()
+                        .into(findViewById(R.id.ivProfilePhoto))
+                } ?: run {
+                    // Show default avatar if no photo URL exists
+                    Glide.with(this@WorkerHomeActivity)
+                        .load(R.drawable.ic_default_avatar)
                         .circleCrop()
                         .into(findViewById(R.id.ivProfilePhoto))
                 }
@@ -336,31 +428,40 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                             .update(updates)
                             .addOnSuccessListener {
                                 Log.d(TAG, "Profile picture updated in Firestore successfully")
-                                progressDialog.dismiss()
-                                Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
-                                
-                                // Reload data
-                                loadWorkerDocuments()
-                                loadUserData(findViewById(R.id.nav_view))
+                                // Only update UI if activity is still valid
+                                if (!isFinishing && !isDestroyed) {
+                                    progressDialog.dismiss()
+                                    Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
+                                    
+                                    // Reload data
+                                    loadWorkerDocuments()
+                                    loadUserData(findViewById(R.id.nav_view))
+                                }
                             }
                             .addOnFailureListener { e ->
                                 Log.e(TAG, "Failed to update profile picture in Firestore", e)
                                 // If document doesn't exist, try to create it
                                 if (e.message?.contains("NOT_FOUND") == true) {
                                     createFirestoreWorkerDocumentWithPhoto(userId, downloadUri.toString())
+                                }
+                                // Only update UI if activity is still valid
+                                if (!isFinishing && !isDestroyed) {
                                     progressDialog.dismiss()
-                                } else {
-                                    progressDialog.dismiss()
-                                    Toast.makeText(this, "Failed to save: ${e.message}", Toast.LENGTH_LONG).show()
+                                    if (e.message?.contains("NOT_FOUND") != true) {
+                                        Toast.makeText(this, "Failed to save: ${e.message}", Toast.LENGTH_LONG).show()
+                                    }
                                 }
                             }
                     } else {
-                        progressDialog.dismiss()
-                        Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
-                        
-                        // Reload data
-                        loadWorkerDocuments()
-                        loadUserData(findViewById(R.id.nav_view))
+                        // Only update UI if activity is still valid
+                        if (!isFinishing && !isDestroyed) {
+                            progressDialog.dismiss()
+                            Toast.makeText(this, "${docType.capitalize()} uploaded successfully!", Toast.LENGTH_SHORT).show()
+                            
+                            // Reload data
+                            loadWorkerDocuments()
+                            loadUserData(findViewById(R.id.nav_view))
+                        }
                     }
                 }
             }

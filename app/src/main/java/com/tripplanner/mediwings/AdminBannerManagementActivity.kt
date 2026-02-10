@@ -1,5 +1,39 @@
 package com.tripplanner.mediwings
 
+/**
+ * BANNER MANAGEMENT AND DISPLAY DOCUMENTATION
+ * ============================================
+ * 
+ * Admin banner images follow a similar upload/display pattern to profile photos,
+ * but are stored in a separate location and displayed in carousel/banner views.
+ * 
+ * BANNER STORAGE:
+ * ---------------
+ * 1. Firebase Storage Path: banners/banner_{bannerId}_{timestamp}.jpg
+ * 2. Realtime Database: Banners/{bannerId} = downloadUrl
+ * 
+ * UPLOAD FLOW (uploadNewBanner):
+ * ------------------------------
+ * 1. Admin selects banner image (must be < 1MB)
+ * 2. Image uploaded to Firebase Storage with unique ID
+ * 3. Download URL obtained and saved to Realtime DB
+ * 4. Progress tracking shows upload percentage
+ * 5. Banner list automatically updates via ValueEventListener
+ * 
+ * DISPLAY:
+ * --------
+ * 1. Banners loaded in RecyclerView (BannerAdapter)
+ * 2. Full preview available via viewBanner() dialog
+ * 3. Glide configuration:
+ *    - .placeholder(ic_menu_gallery): Default Android gallery icon
+ *    - .error(ic_menu_gallery): Error fallback
+ *    - .centerCrop(): Fill banner area without distortion
+ * 
+ * These banners are displayed in student/worker home screens in auto-scrolling
+ * carousel views. Proper error handling ensures banners always show, even if
+ * some images fail to load.
+ */
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -237,12 +271,14 @@ class AdminBannerManagementActivity : AppCompatActivity() {
         if (position < 0 || position >= bannersList.size) return
         val banner = bannersList[position]
         
-        // Show full image in dialog
+        // Show full image in dialog with error handling
         val dialogView = layoutInflater.inflate(R.layout.dialog_view_banner, null)
         val imageView = dialogView.findViewById<ImageView>(R.id.ivBannerPreview)
         
         Glide.with(this)
             .load(banner.url)
+            .placeholder(android.R.drawable.ic_menu_gallery)
+            .error(android.R.drawable.ic_menu_gallery)
             .into(imageView)
         
         AlertDialog.Builder(this)
@@ -275,9 +311,13 @@ class AdminBannerManagementActivity : AppCompatActivity() {
             
             holder.tvBannerId.text = "Banner ${position + 1}"
             
+            // Load banner image with error handling
+            // Banners are stored in Firebase Storage and URLs saved to Realtime DB
             Glide.with(holder.itemView.context)
                 .load(banner.url)
                 .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_menu_gallery)
+                .centerCrop()
                 .into(holder.ivBanner)
             
             holder.btnRemove.setOnClickListener {

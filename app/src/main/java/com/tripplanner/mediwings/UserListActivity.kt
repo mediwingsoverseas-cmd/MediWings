@@ -1,5 +1,30 @@
 package com.tripplanner.mediwings
 
+/**
+ * USER LIST IMAGE DISPLAY DOCUMENTATION
+ * ======================================
+ * 
+ * This activity displays a list of users (students or workers) with their profile pictures
+ * loaded from Firestore. Images must be correctly displayed for proper user identification.
+ * 
+ * IMAGE SOURCE:
+ * -------------
+ * 1. Primary: Firestore users collection, photoUrl field (line ~96)
+ * 2. Fallback: Realtime Database, profilePic field (line ~138)
+ * 
+ * DISPLAY IN ADAPTER:
+ * -------------------
+ * - Images displayed in RecyclerView items (item_user.xml)
+ * - Loaded via Glide with circular crop for consistent appearance
+ * - Configuration (UserAdapter.onBindViewHolder):
+ *   .placeholder(R.drawable.ic_default_avatar): Loading state
+ *   .error(R.drawable.ic_default_avatar): Error fallback
+ *   .circleCrop(): Circular format matching profile pages
+ * 
+ * This ensures all user thumbnails appear correctly in chat/user lists
+ * and remain consistent with profile image display in other activities.
+ */
+
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -267,9 +292,21 @@ class UserListActivity : AppCompatActivity() {
                 holder.tvUnreadCount.visibility = View.GONE
             }
             
-            // Load profile picture
+            // Load profile picture with error handling and circular crop
+            // This displays user images from Firestore photoUrl field
             if (user.profilePic.isNotEmpty()) {
-                Glide.with(holder.itemView.context).load(user.profilePic).into(holder.ivImage)
+                Glide.with(holder.itemView.context)
+                    .load(user.profilePic)
+                    .placeholder(R.drawable.ic_default_avatar)
+                    .error(R.drawable.ic_default_avatar)
+                    .circleCrop()
+                    .into(holder.ivImage)
+            } else {
+                // Show default avatar if no profile picture exists
+                Glide.with(holder.itemView.context)
+                    .load(R.drawable.ic_default_avatar)
+                    .circleCrop()
+                    .into(holder.ivImage)
             }
             
             holder.itemView.setOnClickListener { onClick(item) }
