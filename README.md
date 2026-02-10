@@ -128,6 +128,7 @@ Before deploying to production:
 
 ## 📚 Additional Documentation
 
+- [UPGRADE_DOCUMENTATION.md](UPGRADE_DOCUMENTATION.md) - **NEW**: Latest upgrades and improvements (v2.0)
 - [SETUP_GUIDE.md](SETUP_GUIDE.md) - Detailed setup and testing guide
 - [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing procedures
 - [WORKER_DOCUMENTATION.md](WORKER_DOCUMENTATION.md) - Worker interface documentation
