@@ -116,8 +116,12 @@ class ChatActivity : AppCompatActivity() {
                 finish()
                 return
             }
-            // For admin, use "admin" as sender ID to identify admin messages
-            currentUserId = "admin"
+            // For admin, use their actual Firebase UID to identify admin messages uniquely
+            currentUserId = auth.currentUser?.uid ?: run {
+                Toast.makeText(this, "Admin authentication required. Please log in.", Toast.LENGTH_SHORT).show()
+                finish()
+                return
+            }
             currentUserName = "Admin"
             // Include role in chatId for role-based separation: userId_role
             chatId = "${userId}_${userRole}"
@@ -210,7 +214,8 @@ class ChatActivity : AppCompatActivity() {
         metaListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
-                    val typingPath = if (isAdmin) "studentTyping" else "adminTyping"
+                    // Fixed: If user is admin, check if student is typing. If user is student/worker, check if admin is typing
+                    val typingPath = if (isAdmin) "userTyping" else "adminTyping"
                     val isTyping = snapshot.child(typingPath).getValue(Boolean::class.java) ?: false
                     tvTypingIndicator.visibility = if (isTyping) View.VISIBLE else View.GONE
                 } catch (e: Exception) {
@@ -459,7 +464,8 @@ class ChatActivity : AppCompatActivity() {
     private fun updateTypingStatus(isTyping: Boolean) {
         try {
             chatId?.let { id ->
-                val typingPath = if (isAdmin) "adminTyping" else "studentTyping"
+                // Fixed: If user is admin, set adminTyping. If user is student/worker, set userTyping
+                val typingPath = if (isAdmin) "adminTyping" else "userTyping"
                 database.child("Chats").child(id).child("meta").child(typingPath).setValue(isTyping)
             }
         } catch (e: Exception) {

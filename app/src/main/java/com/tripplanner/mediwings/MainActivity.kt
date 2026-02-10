@@ -10,6 +10,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 
 class MainActivity : AppCompatActivity() {
 
@@ -142,44 +146,72 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Hardcoded Admin Login
-            if (email == "javeedzoj@gmail.com" && password == "javeedJaV") {
-                // Show dialog for admin to select Student or Worker admin mode
-                val options = arrayOf("Student Admin", "Worker Admin")
-                val builder = android.app.AlertDialog.Builder(this)
-                builder.setTitle("Select Admin Mode")
-                builder.setItems(options) { dialog, which ->
-                    val adminMode = if (which == 0) "student" else "worker"
-                    Toast.makeText(this, "Admin Login Successful!", Toast.LENGTH_SHORT).show()
-                    
-                    val intent = Intent(this, AdminDashboardActivity::class.java)
-                    intent.putExtra("ADMIN_MODE", adminMode)
-                    startActivity(intent)
-                    finish()
-                }
-                builder.setOnCancelListener {
-                    // User cancelled, do nothing
-                }
-                builder.show()
-                return@setOnClickListener
-            }
-
+            // Attempt Firebase authentication first
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show()
+                        val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
                         
-                        // Save the role preference
-                        val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
-                        sharedPref.edit().putBoolean("isWorker", isWorkerSelected).apply()
-                        
-                        val intent = if (isWorkerSelected) {
-                            Intent(this, WorkerActivity::class.java)
-                        } else {
-                            Intent(this, StudentHomeActivity::class.java)
-                        }
-                        startActivity(intent)
-                        finish()
+                        // Check if user is admin in Firebase Database
+                        val database = FirebaseDatabase.getInstance()
+                        database.getReference("users").child(userId).child("isAdmin")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    val isAdmin = snapshot.getValue(Boolean::class.java) ?: false
+                                    
+                                    if (isAdmin) {
+                                        // User is admin - show mode selection dialog
+                                        val options = arrayOf("Student Admin", "Worker Admin")
+                                        val builder = android.app.AlertDialog.Builder(this@MainActivity)
+                                        builder.setTitle("Select Admin Mode")
+                                        builder.setItems(options) { dialog, which ->
+                                            val adminMode = if (which == 0) "student" else "worker"
+                                            Toast.makeText(this@MainActivity, "Admin Login Successful!", Toast.LENGTH_SHORT).show()
+                                            
+                                            val intent = Intent(this@MainActivity, AdminDashboardActivity::class.java)
+                                            intent.putExtra("ADMIN_MODE", adminMode)
+                                            startActivity(intent)
+                                            finish()
+                                        }
+                                        builder.setOnCancelListener {
+                                            // User cancelled - sign out and stay on login page
+                                            auth.signOut()
+                                        }
+                                        builder.show()
+                                    } else {
+                                        // Regular user login
+                                        Toast.makeText(this@MainActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
+                                        
+                                        // Save the role preference
+                                        val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                                        sharedPref.edit().putBoolean("isWorker", isWorkerSelected).apply()
+                                        
+                                        val intent = if (isWorkerSelected) {
+                                            Intent(this@MainActivity, WorkerActivity::class.java)
+                                        } else {
+                                            Intent(this@MainActivity, StudentHomeActivity::class.java)
+                                        }
+                                        startActivity(intent)
+                                        finish()
+                                    }
+                                }
+                                
+                                override fun onCancelled(error: DatabaseError) {
+                                    // Database error - treat as regular user
+                                    Toast.makeText(this@MainActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
+                                    
+                                    val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                                    sharedPref.edit().putBoolean("isWorker", isWorkerSelected).apply()
+                                    
+                                    val intent = if (isWorkerSelected) {
+                                        Intent(this@MainActivity, WorkerActivity::class.java)
+                                    } else {
+                                        Intent(this@MainActivity, StudentHomeActivity::class.java)
+                                    }
+                                    startActivity(intent)
+                                    finish()
+                                }
+                            })
                     } else {
                         val errorMessage = when {
                             task.exception?.message?.contains("no user record", ignoreCase = true) == true -> 

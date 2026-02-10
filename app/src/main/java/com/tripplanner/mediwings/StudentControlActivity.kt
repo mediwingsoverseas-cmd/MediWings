@@ -45,14 +45,14 @@ class StudentControlActivity : AppCompatActivity() {
         val controlVisaApproved = findViewById<View>(R.id.control_visa_approved)
         val controlFlight = findViewById<View>(R.id.control_flight)
 
-        setupControlTitle(controlApp, "Application")
-        setupControlTitle(controlVer, "Document Verification")
-        setupControlTitle(controlAdm, "University Admission")
-        setupControlTitle(controlVisa, "Visa")
-        setupControlTitle(controlVisaApplied, "• Visa Applied")
-        setupControlTitle(controlVisaProcessing, "• Processing")
-        setupControlTitle(controlVisaApproved, "• Approved")
-        setupControlTitle(controlFlight, "Flight Scheduled")
+        setupControlTitle(controlApp, getString(R.string.status_application))
+        setupControlTitle(controlVer, getString(R.string.status_verification))
+        setupControlTitle(controlAdm, getString(R.string.status_admission))
+        setupControlTitle(controlVisa, getString(R.string.status_visa))
+        setupControlTitle(controlVisaApplied, getString(R.string.status_visa_applied))
+        setupControlTitle(controlVisaProcessing, getString(R.string.status_visa_processing))
+        setupControlTitle(controlVisaApproved, getString(R.string.status_visa_approved))
+        setupControlTitle(controlFlight, getString(R.string.status_flight))
 
         database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
