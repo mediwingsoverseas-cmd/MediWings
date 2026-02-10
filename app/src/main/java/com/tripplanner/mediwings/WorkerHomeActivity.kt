@@ -351,15 +351,18 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_home_drawer -> {
+                showView("home")
                 bottomNav.selectedItemId = R.id.nav_home
             }
             R.id.nav_documents -> {
+                showView("docs")
                 bottomNav.selectedItemId = R.id.nav_docs
             }
             R.id.nav_chat_drawer -> {
                 openChat()
             }
             R.id.nav_profile_drawer -> {
+                showView("profile")
                 bottomNav.selectedItemId = R.id.nav_profile
             }
             R.id.nav_logout -> {
