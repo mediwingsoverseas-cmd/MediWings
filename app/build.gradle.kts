@@ -62,4 +62,7 @@ dependencies {
     
     // Rich Text Editor
     implementation("jp.wasabeef:richeditor-android:2.0.0")
+    
+    // Circle Image View
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 }

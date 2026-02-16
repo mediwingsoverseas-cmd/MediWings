@@ -29,10 +29,12 @@
                 android:textStyle="bold"
                 android:textSize="16sp"/>
 
-            <Switch
-                android:id="@+id/swStepStatus"
+            <Spinner
+                android:id="@+id/spinnerStepStatus"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:minWidth="120dp"
+                android:spinnerMode="dropdown" />
         </LinearLayout>
 
         <LinearLayout

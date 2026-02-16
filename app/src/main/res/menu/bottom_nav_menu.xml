@@ -5,15 +5,19 @@
         android:icon="@drawable/ic_home"
         android:title="Home" />
     <item
+        android:id="@+id/bottom_universities"
+        android:icon="@drawable/ic_university"
+        android:title="Universities" />
+    <item
+        android:id="@+id/bottom_profile"
+        android:icon="@drawable/ic_graduate"
+        android:title="Profile" />
+    <item
         android:id="@+id/bottom_docs"
         android:icon="@drawable/ic_document"
-        android:title="Documents" />
+        android:title="Docs" />
     <item
         android:id="@+id/bottom_status"
         android:icon="@drawable/ic_verified"
-        android:title="Tracking" />
-    <item
-        android:id="@+id/bottom_profile"
-        android:icon="@android:drawable/ic_menu_myplaces"
-        android:title="Profile" />
+        android:title="Status" />
 </menu>

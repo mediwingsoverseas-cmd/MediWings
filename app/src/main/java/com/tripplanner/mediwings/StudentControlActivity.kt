@@ -10,7 +10,9 @@ import com.google.firebase.database.*
 class StudentControlActivity : AppCompatActivity() {
 
     private lateinit var database: DatabaseReference
+    private lateinit var trackingRef: DatabaseReference
     private var userId: String? = null
+    private val statusOptions = arrayOf("pending", "completed")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +27,7 @@ class StudentControlActivity : AppCompatActivity() {
 
         userId = intent.getStringExtra("USER_ID") ?: return
         database = FirebaseDatabase.getInstance().reference.child("users").child(userId!!)
+        trackingRef = FirebaseDatabase.getInstance().reference.child("Tracking").child(userId!!)
 
         val tvName = findViewById<TextView>(R.id.tvControlStudentName)
         val btnUpdate = findViewById<Button>(R.id.btnUpdateStatus)
@@ -35,24 +38,19 @@ class StudentControlActivity : AppCompatActivity() {
         val ivPassport = findViewById<ImageView>(R.id.ivAdminPassport)
         val ivHIV = findViewById<ImageView>(R.id.ivAdminHIV)
 
-        // Setup Controls for tracking steps
+        // Setup Controls for tracking steps (5 main steps as per requirements)
         val controlApp = findViewById<View>(R.id.control_application)
-        val controlVer = findViewById<View>(R.id.control_verification)
+        val controlDocs = findViewById<View>(R.id.control_verification)
         val controlAdm = findViewById<View>(R.id.control_admission)
         val controlVisa = findViewById<View>(R.id.control_visa)
-        val controlVisaApplied = findViewById<View>(R.id.control_visa_applied)
-        val controlVisaProcessing = findViewById<View>(R.id.control_visa_processing)
-        val controlVisaApproved = findViewById<View>(R.id.control_visa_approved)
         val controlFlight = findViewById<View>(R.id.control_flight)
 
-        setupControlTitle(controlApp, "Application")
-        setupControlTitle(controlVer, "Document Verification")
-        setupControlTitle(controlAdm, "University Admission")
-        setupControlTitle(controlVisa, "Visa")
-        setupControlTitle(controlVisaApplied, "• Visa Applied")
-        setupControlTitle(controlVisaProcessing, "• Processing")
-        setupControlTitle(controlVisaApproved, "• Approved")
-        setupControlTitle(controlFlight, "Flight Scheduled")
+        // Setup Spinners for each control
+        setupControlWithSpinner(controlApp, "Application")
+        setupControlWithSpinner(controlDocs, "Documents")
+        setupControlWithSpinner(controlAdm, "Admission")
+        setupControlWithSpinner(controlVisa, "Visa")
+        setupControlWithSpinner(controlFlight, "Flight")
 
         database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -60,20 +58,7 @@ class StudentControlActivity : AppCompatActivity() {
                 
                 tvName.text = snapshot.child("name").value.toString()
                 
-                val tracking = snapshot.child("tracking")
-                loadStepData(controlApp, tracking.child("step1"))
-                loadStepData(controlVer, tracking.child("step2"))
-                loadStepData(controlAdm, tracking.child("step3"))
-                
-                val visaData = tracking.child("step4")
-                loadStepData(controlVisa, visaData)
-                loadStepData(controlVisaApplied, visaData.child("applied"))
-                loadStepData(controlVisaProcessing, visaData.child("processing"))
-                loadStepData(controlVisaApproved, visaData.child("approved"))
-                
-                loadStepData(controlFlight, tracking.child("step5"))
-
-                val docs = snapshot.child("docs")
+                val docs = snapshot.child("documents")
                 loadDocImage(docs.child("photos").value?.toString(), ivPhotos)
                 loadDocImage(docs.child("aadhar").value?.toString(), ivAadhar)
                 loadDocImage(docs.child("passport").value?.toString(), ivPassport)
@@ -81,45 +66,67 @@ class StudentControlActivity : AppCompatActivity() {
             }
             override fun onCancelled(error: DatabaseError) {}
         })
+        
+        // Load tracking data from Tracking/{uid}
+        trackingRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    loadStepData(controlApp, snapshot.child("application"))
+                    loadStepData(controlDocs, snapshot.child("docs"))
+                    loadStepData(controlAdm, snapshot.child("admission"))
+                    loadStepData(controlVisa, snapshot.child("visa"))
+                    loadStepData(controlFlight, snapshot.child("flight"))
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
 
         btnUpdate.setOnClickListener {
-            val visaStep = getStepData(controlVisa).toMutableMap()
-            visaStep["applied"] = getStepData(controlVisaApplied)
-            visaStep["processing"] = getStepData(controlVisaProcessing)
-            visaStep["approved"] = getStepData(controlVisaApproved)
-
             val trackingUpdates = mapOf(
-                "step1" to getStepData(controlApp),
-                "step2" to getStepData(controlVer),
-                "step3" to getStepData(controlAdm),
-                "step4" to visaStep,
-                "step5" to getStepData(controlFlight)
+                "application" to getStepData(controlApp),
+                "docs" to getStepData(controlDocs),
+                "admission" to getStepData(controlAdm),
+                "visa" to getStepData(controlVisa),
+                "flight" to getStepData(controlFlight)
             )
 
-            database.child("tracking").setValue(trackingUpdates).addOnSuccessListener {
+            // Update to Tracking/{student_uid} as per requirements
+            trackingRef.setValue(trackingUpdates).addOnSuccessListener {
                 Toast.makeText(this, "Tracking Updated Successfully!", Toast.LENGTH_SHORT).show()
+            }.addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to update: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun setupControlTitle(view: View, title: String) {
+    private fun setupControlWithSpinner(view: View, title: String) {
         view.findViewById<TextView>(R.id.tvAdminStepTitle).text = title
+        val spinner = view.findViewById<Spinner>(R.id.spinnerStepStatus)
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, statusOptions)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
     }
 
     private fun loadStepData(view: View, data: DataSnapshot) {
-        val status = data.child("status").value == true
-        val date = data.child("date").value?.toString() ?: ""
+        val status = data.child("status").value?.toString() ?: "pending"
+        val date = data.child("completedDate").value?.toString() ?: data.child("date").value?.toString() ?: ""
         val remark = data.child("remark").value?.toString() ?: ""
 
-        view.findViewById<Switch>(R.id.swStepStatus).isChecked = status
+        val spinner = view.findViewById<Spinner>(R.id.spinnerStepStatus)
+        val position = statusOptions.indexOf(status)
+        if (position >= 0) {
+            spinner.setSelection(position)
+        }
         view.findViewById<EditText>(R.id.etStepDate).setText(date)
         view.findViewById<EditText>(R.id.etStepRemark).setText(remark)
     }
 
     private fun getStepData(view: View): Map<String, Any> {
+        val spinner = view.findViewById<Spinner>(R.id.spinnerStepStatus)
+        val status = spinner.selectedItem?.toString() ?: "pending"
         return mapOf(
-            "status" to view.findViewById<Switch>(R.id.swStepStatus).isChecked,
-            "date" to view.findViewById<EditText>(R.id.etStepDate).text.toString(),
+            "status" to status,
+            "completedDate" to view.findViewById<EditText>(R.id.etStepDate).text.toString(),
             "remark" to view.findViewById<EditText>(R.id.etStepRemark).text.toString()
         )
     }

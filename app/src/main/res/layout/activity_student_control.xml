@@ -38,7 +38,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Update Tracking Status"
+            android:text="Update Tracking Status (5 Steps)"
             android:textColor="#333333"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -46,27 +46,12 @@
 
         <!-- Step 1: Application -->
         <include layout="@layout/layout_admin_status_control" android:id="@+id/control_application" />
-        <!-- Step 2: Verification -->
+        <!-- Step 2: Documents -->
         <include layout="@layout/layout_admin_status_control" android:id="@+id/control_verification" />
         <!-- Step 3: Admission -->
         <include layout="@layout/layout_admin_status_control" android:id="@+id/control_admission" />
-
         <!-- Step 4: Visa -->
         <include layout="@layout/layout_admin_status_control" android:id="@+id/control_visa" />
-
-        <!-- Visa Sub-steps -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="24dp"
-            android:layout_marginBottom="16dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Visa Sub-steps:" android:textSize="12sp" android:textStyle="bold"/>
-            <include layout="@layout/layout_admin_status_control" android:id="@+id/control_visa_applied" />
-            <include layout="@layout/layout_admin_status_control" android:id="@+id/control_visa_processing" />
-            <include layout="@layout/layout_admin_status_control" android:id="@+id/control_visa_approved" />
-        </LinearLayout>
-
         <!-- Step 5: Flight -->
         <include layout="@layout/layout_admin_status_control" android:id="@+id/control_flight" />
 
