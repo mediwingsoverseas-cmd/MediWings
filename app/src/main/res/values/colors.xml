@@ -62,4 +62,8 @@
     <color name="worker_button">#D4AF37</color>
     <color name="worker_button_selected">#D4AF37</color>   <!-- Rich Gold - selected Worker -->
     <color name="worker_button_inactive">#9B8B5A</color>   <!-- Dim Gold - inactive Worker -->
+    
+    <!-- Timeline Status Colors (Flipkart-style) -->
+    <color name="timeline_completed">#4CAF50</color>       <!-- Green - Completed steps -->
+    <color name="timeline_pending">#BDBDBD</color>         <!-- Grey - Pending steps -->
 </resources>

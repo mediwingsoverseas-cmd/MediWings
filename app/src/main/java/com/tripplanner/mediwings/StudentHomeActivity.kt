@@ -196,6 +196,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home_tab -> { showView("home"); true }
+                R.id.bottom_universities -> { showView("universities"); true }
                 R.id.bottom_docs -> { showView("docs"); true }
                 R.id.bottom_status -> { showView("status"); true }
                 R.id.bottom_profile -> { showView("profile"); true }
@@ -447,17 +448,33 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     private fun setupStatusTimeline() {
         val userId = auth.currentUser?.uid ?: return
         
+        // Read from Tracking/{uid} as per the requirements (5 steps: Application, Docs, Admission, Visa, Flight)
+        database.child("Tracking").child(userId).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Note: View IDs may have legacy names but labels are updated for 5-step workflow
+                updateTimelineStep(findViewById(R.id.step_application), "Application", snapshot.child("application"))
+                updateTimelineStep(findViewById(R.id.step_documents), "Documents", snapshot.child("docs"))
+                updateTimelineStep(findViewById(R.id.step_verification), "Admission", snapshot.child("admission"))  // Reuses verification ID
+                updateTimelineStep(findViewById(R.id.step_visa), "Visa", snapshot.child("visa"))
+                updateTimelineStep(findViewById(R.id.step_flight), "Flight", snapshot.child("flight"))
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+        
+        // Also check legacy path for backwards compatibility
         database.child("users").child(userId).child("tracking").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                updateTimelineStep(findViewById(R.id.step_application), "Application", snapshot.child("step1"))
-                updateTimelineStep(findViewById(R.id.step_documents), "Documents", snapshot.child("step2"))
-                updateTimelineStep(findViewById(R.id.step_verification), "Verification", snapshot.child("step3"))
-                val visaData = snapshot.child("step4")
-                updateTimelineStep(findViewById(R.id.step_visa), "Visa", visaData)
-                updateTimelineStep(findViewById(R.id.visa_step_applied), "Visa Applied", visaData.child("applied"))
-                updateTimelineStep(findViewById(R.id.visa_step_processing), "Processing", visaData.child("processing"))
-                updateTimelineStep(findViewById(R.id.visa_step_approved), "Approved", visaData.child("approved"))
-                updateTimelineStep(findViewById(R.id.step_flight), "Flight Scheduled", snapshot.child("step5"))
+                if (snapshot.exists()) {
+                    updateTimelineStep(findViewById(R.id.step_application), "Application", snapshot.child("step1"))
+                    updateTimelineStep(findViewById(R.id.step_documents), "Documents", snapshot.child("step2"))
+                    updateTimelineStep(findViewById(R.id.step_verification), "Admission", snapshot.child("step3"))
+                    val visaData = snapshot.child("step4")
+                    updateTimelineStep(findViewById(R.id.step_visa), "Visa", visaData)
+                    updateTimelineStep(findViewById(R.id.visa_step_applied), "Visa Applied", visaData.child("applied"))
+                    updateTimelineStep(findViewById(R.id.visa_step_processing), "Processing", visaData.child("processing"))
+                    updateTimelineStep(findViewById(R.id.visa_step_approved), "Approved", visaData.child("approved"))
+                    updateTimelineStep(findViewById(R.id.step_flight), "Flight", snapshot.child("step5"))
+                }
             }
             override fun onCancelled(error: DatabaseError) {}
         })
@@ -465,8 +482,9 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     private fun updateTimelineStep(view: View?, title: String, data: DataSnapshot) {
         if (view == null) return
-        val isDone = data.child("status").value == true
-        val date = data.child("date").value?.toString() ?: ""
+        val status = data.child("status").value?.toString() ?: "pending"
+        val isDone = status == "completed" || data.child("status").value == true
+        val date = data.child("date").value?.toString() ?: data.child("completedDate").value?.toString() ?: ""
         val remark = data.child("remark").value?.toString() ?: ""
         val imageUrl = data.child("image").value?.toString() ?: ""
 
@@ -477,16 +495,23 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
         val indicator = view.findViewById<CardView>(R.id.cvIndicator)
         val line = view.findViewById<View>(R.id.view_line)
         val ivStepImage = view.findViewById<ImageView>(R.id.ivStepImage)
+        
+        // Use timeline colors from resources: #4CAF50 for completed, #BDBDBD for pending
+        val completedColor = ContextCompat.getColor(this, R.color.timeline_completed)
+        val pendingColor = ContextCompat.getColor(this, R.color.timeline_pending)
 
         if (isDone) {
-            tvStatus.text = "Completed"; tvStatus.setTextColor(android.graphics.Color.GREEN)
-            indicator.setCardBackgroundColor(android.graphics.Color.GREEN)
-            line.setBackgroundColor(android.graphics.Color.GREEN)
-            tvDate.visibility = View.VISIBLE; tvDate.text = date
+            tvStatus.text = "Completed"
+            tvStatus.setTextColor(completedColor)
+            indicator.setCardBackgroundColor(completedColor)
+            line.setBackgroundColor(completedColor)
+            tvDate.visibility = View.VISIBLE
+            tvDate.text = date
         } else {
-            tvStatus.text = "Pending"; tvStatus.setTextColor(android.graphics.Color.GRAY)
-            indicator.setCardBackgroundColor(android.graphics.Color.LTGRAY)
-            line.setBackgroundColor(android.graphics.Color.LTGRAY)
+            tvStatus.text = "Pending"
+            tvStatus.setTextColor(pendingColor)
+            indicator.setCardBackgroundColor(pendingColor)
+            line.setBackgroundColor(pendingColor)
             tvDate.visibility = View.GONE
             if (remark.isNotEmpty()) { tvRemark.visibility = View.VISIBLE; tvRemark.text = remark }
         }
