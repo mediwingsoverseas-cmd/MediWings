@@ -448,12 +448,13 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
     private fun setupStatusTimeline() {
         val userId = auth.currentUser?.uid ?: return
         
-        // Read from Tracking/{uid} as per the requirements
+        // Read from Tracking/{uid} as per the requirements (5 steps: Application, Docs, Admission, Visa, Flight)
         database.child("Tracking").child(userId).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Note: View IDs may have legacy names but labels are updated for 5-step workflow
                 updateTimelineStep(findViewById(R.id.step_application), "Application", snapshot.child("application"))
                 updateTimelineStep(findViewById(R.id.step_documents), "Documents", snapshot.child("docs"))
-                updateTimelineStep(findViewById(R.id.step_verification), "Admission", snapshot.child("admission"))
+                updateTimelineStep(findViewById(R.id.step_verification), "Admission", snapshot.child("admission"))  // Reuses verification ID
                 updateTimelineStep(findViewById(R.id.step_visa), "Visa", snapshot.child("visa"))
                 updateTimelineStep(findViewById(R.id.step_flight), "Flight", snapshot.child("flight"))
             }

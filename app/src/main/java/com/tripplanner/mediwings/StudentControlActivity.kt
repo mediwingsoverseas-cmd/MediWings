@@ -39,11 +39,12 @@ class StudentControlActivity : AppCompatActivity() {
         val ivHIV = findViewById<ImageView>(R.id.ivAdminHIV)
 
         // Setup Controls for tracking steps (5 main steps as per requirements)
-        val controlApp = findViewById<View>(R.id.control_application)
-        val controlDocs = findViewById<View>(R.id.control_verification)
-        val controlAdm = findViewById<View>(R.id.control_admission)
-        val controlVisa = findViewById<View>(R.id.control_visa)
-        val controlFlight = findViewById<View>(R.id.control_flight)
+        // Note: Using existing layout IDs but relabeling them for the 5-step workflow
+        val controlApp = findViewById<View>(R.id.control_application)        // Step 1: Application
+        val controlDocs = findViewById<View>(R.id.control_verification)      // Step 2: Documents (reuses verification ID)
+        val controlAdm = findViewById<View>(R.id.control_admission)          // Step 3: Admission
+        val controlVisa = findViewById<View>(R.id.control_visa)              // Step 4: Visa
+        val controlFlight = findViewById<View>(R.id.control_flight)          // Step 5: Flight
 
         // Setup Spinners for each control
         setupControlWithSpinner(controlApp, "Application")
