@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors -->
+    <!-- Premium Primary Colors -->
     <color name="primary_dark">#0A1628</color>      <!-- Very Dark Navy - Status bar, headers -->
     <color name="primary">#0D1B2A</color>           <!-- Dark Navy - Main backgrounds -->
     <color name="primary_light">#1B263B</color>     <!-- Lighter Navy - Cards, secondary -->
 
-    <!-- Accent Colors -->
+    <!-- Premium Accent Colors -->
     <color name="gold">#D4AF37</color>              <!-- Rich Gold - Primary accent -->
     <color name="gold_light">#E8C547</color>        <!-- Light Gold - Highlights -->
     <color name="gold_dark">#B8960C</color>         <!-- Dark Gold - Pressed states -->
@@ -20,8 +20,10 @@
     <color name="text_on_dark">#FFFFFF</color>      <!-- White - Text on dark backgrounds -->
     <color name="text_gold">#D4AF37</color>         <!-- Gold - Accent text -->
 
-    <!-- Status Colors -->
-    <color name="success">#2E7D32</color>           <!-- Green -->
+    <!-- Status/Timeline Colors (Flipkart-style) -->
+    <color name="status_completed">#4CAF50</color>  <!-- Green - Completed steps -->
+    <color name="status_pending">#BDBDBD</color>    <!-- Grey - Pending steps -->
+    <color name="success">#4CAF50</color>           <!-- Green -->
     <color name="error">#C62828</color>             <!-- Red -->
     <color name="warning">#F9A825</color>           <!-- Yellow -->
 
@@ -31,7 +33,7 @@
     <color name="gray">#808080</color>
     <color name="dark_gray">#333333</color>
     <color name="red">#C62828</color>
-    <color name="green">#2E7D32</color>
+    <color name="green">#4CAF50</color>
     <color name="transparent">#00000000</color>
 
     <!-- Chat Bubbles -->
@@ -40,7 +42,7 @@
     <color name="chat_text_out">#FFFFFF</color>
     <color name="chat_text_in">#333333</color>
 
-    <!-- Legacy References -->
+    <!-- Premium Theme References -->
     <color name="primary_premium">#0D1B2A</color>
     <color name="secondary_premium">#1B263B</color>
     <color name="accent_premium">#E0E1DD</color>
@@ -52,14 +54,15 @@
     <color name="purple_200">#D4AF37</color>
     <color name="purple_500">#0D1B2A</color>
     
-    <!-- Login Button Colors - Gold Theme -->
-    <!-- Student Button Colors - Gold -->
+    <!-- Login Button Colors - Premium Gold Theme -->
     <color name="student_button">#D4AF37</color>
     <color name="student_button_selected">#D4AF37</color>  <!-- Rich Gold - selected Student -->
     <color name="student_button_inactive">#9B8B5A</color>  <!-- Dim Gold - inactive Student -->
     
-    <!-- Worker Button Colors - Gold -->
     <color name="worker_button">#D4AF37</color>
     <color name="worker_button_selected">#D4AF37</color>   <!-- Rich Gold - selected Worker -->
     <color name="worker_button_inactive">#9B8B5A</color>   <!-- Dim Gold - inactive Worker -->
+    
+    <!-- Profile/Navigation Accent -->
+    <color name="profile_accent">#FFD700</color>    <!-- Bright Gold - Profile highlight -->
 </resources>
