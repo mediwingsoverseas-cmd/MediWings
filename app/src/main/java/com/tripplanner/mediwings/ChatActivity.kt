@@ -83,6 +83,13 @@ class ChatActivity : AppCompatActivity() {
         
         tvUserName.text = intent.getStringExtra("USER_NAME") ?: "Support"
         
+        // Wire back button
+        findViewById<ImageView>(R.id.ivBack).setOnClickListener { finish() }
+        
+        // Clear unread count when chat is opened
+        val clearField = if (isAdmin) "adminUnreadCount" else "studentUnreadCount"
+        database.child("Chats").child(chatId!!).child("meta").child(clearField).setValue(0)
+        
         val messagesList = mutableListOf<ChatItem>()
         val adapter = MessageAdapter(messagesList, currentUserId)
         val layoutManager = LinearLayoutManager(this)
@@ -118,7 +125,18 @@ class ChatActivity : AppCompatActivity() {
     private fun sendTextMessage(text: String, messagesRef: DatabaseReference) {
         val messageId = messagesRef.push().key ?: return
         val msg = Message(messageId, currentUserId, currentUserName, text, System.currentTimeMillis())
-        messagesRef.child(messageId).setValue(msg).addOnSuccessListener { etMessage.setText("") }
+        messagesRef.child(messageId).setValue(msg).addOnSuccessListener {
+            etMessage.setText("")
+            // Update chat metadata and increment unread count for the other party
+            val metaRef = database.child("Chats").child(chatId!!).child("meta")
+            val unreadField = if (isAdmin) "studentUnreadCount" else "adminUnreadCount"
+            val updates: Map<String, Any> = mapOf(
+                "lastMessage" to text,
+                "lastMessageTime" to System.currentTimeMillis(),
+                unreadField to ServerValue.increment(1)
+            )
+            metaRef.updateChildren(updates)
+        }
     }
     
     private fun fetchCurrentUserName() {

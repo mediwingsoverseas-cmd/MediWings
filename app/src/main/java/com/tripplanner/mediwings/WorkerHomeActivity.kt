@@ -80,11 +80,15 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
     private lateinit var database: DatabaseReference
     private lateinit var firestore: FirebaseFirestore
     private lateinit var storage: FirebaseStorage
+    private lateinit var navView: NavigationView
     
     private lateinit var homeView: View
     private lateinit var docsView: View
     private lateinit var profileView: View
     private lateinit var bottomNav: BottomNavigationView
+    
+    private var unreadCountListener: ValueEventListener? = null
+    private var unreadCountRef: DatabaseReference? = null
     
     private var uploadType = "" // "resume", "certificate", "profile"
     
@@ -123,7 +127,7 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
         toolbar.navigationIcon?.setTint(goldColor)
 
         drawerLayout = findViewById(R.id.drawer_layout)
-        val navView = findViewById<NavigationView>(R.id.nav_view)
+        navView = findViewById(R.id.nav_view)
         navView.setNavigationItemSelectedListener(this)
 
         val toggle = ActionBarDrawerToggle(
@@ -680,6 +684,56 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
             drawerLayout.closeDrawer(GravityCompat.START)
         } else {
             super.onBackPressed()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val userId = auth.currentUser?.uid ?: return
+        unreadCountRef = database.child("Chats").child("${userId}_worker").child("meta")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (isFinishing || isDestroyed) return
+                val count = snapshot.child("studentUnreadCount").getValue(Int::class.java) ?: 0
+                updateBottomNavBadge(count)
+                updateNavDrawerBadge(R.id.nav_chat_drawer, count)
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        unreadCountListener = listener
+        unreadCountRef?.addValueEventListener(listener)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unreadCountListener?.let { unreadCountRef?.removeEventListener(it) }
+        unreadCountListener = null
+    }
+
+    private fun updateBottomNavBadge(count: Int) {
+        if (count > 0) {
+            val badge = bottomNav.getOrCreateBadge(R.id.nav_chat)
+            badge.isVisible = true
+            badge.number = count
+        } else {
+            bottomNav.removeBadge(R.id.nav_chat)
+        }
+    }
+
+    private fun updateNavDrawerBadge(menuItemId: Int, count: Int) {
+        val item = navView.menu.findItem(menuItemId) ?: return
+        if (count > 0) {
+            val badge = TextView(this)
+            badge.text = if (count > 99) "99+" else count.toString()
+            badge.setTextColor(android.graphics.Color.WHITE)
+            badge.textSize = 10f
+            badge.gravity = android.view.Gravity.CENTER
+            badge.background = ContextCompat.getDrawable(this, R.drawable.bg_unread_badge)
+            val size = (20 * resources.displayMetrics.density).toInt()
+            badge.layoutParams = android.view.ViewGroup.LayoutParams(size, size)
+            item.actionView = badge
+        } else {
+            item.actionView = null
         }
     }
 }
