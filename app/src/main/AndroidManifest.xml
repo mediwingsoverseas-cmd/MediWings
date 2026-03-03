@@ -28,8 +28,8 @@
         <activity android:name=".UniversitiesListActivity" />
         <activity android:name=".ContactActivity" />
         <activity android:name=".AdminEditContactActivity" />
+        <activity android:name=".AboutActivity" />
         <activity android:name=".AdminBannerManagementActivity" />
-        <activity android:name=".StudentActivity" />
 
         <activity
             android:name=".MainActivity"

@@ -3,13 +3,16 @@ package com.tripplanner.mediwings
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.util.Patterns
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,16 +27,30 @@ class MainActivity : AppCompatActivity() {
         // Check if user is already logged in
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            // User is signed in, check role and navigate
-            val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
-            val isWorker = sharedPref.getBoolean("isWorker", false)
-            val intent = if (isWorker) {
-                Intent(this, WorkerActivity::class.java)
-            } else {
-                Intent(this, StudentHomeActivity::class.java)
-            }
-            startActivity(intent)
-            finish()
+            // Validate role from Firebase RTDB to detect admin
+            val uid = currentUser.uid
+            val database = FirebaseDatabase.getInstance().reference
+            database.child("users").child(uid).child("role").get()
+                .addOnSuccessListener { snapshot ->
+                    val role = snapshot.value?.toString() ?: ""
+                    if (!isFinishing && !isDestroyed) navigateByRole(role)
+                }
+                .addOnFailureListener {
+                    // Fallback: check workers node
+                    database.child("workers").child(uid).child("role").get()
+                        .addOnSuccessListener { snapshot ->
+                            val role = snapshot.value?.toString() ?: ""
+                            if (!isFinishing && !isDestroyed) navigateByRole(role)
+                        }
+                        .addOnFailureListener {
+                            // Last resort: use cached preference
+                            if (!isFinishing && !isDestroyed) {
+                                val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                                val savedRole = sharedPref.getString("userRole", "student") ?: "student"
+                                navigateByRole(savedRole)
+                            }
+                        }
+                }
             return
         }
 
@@ -41,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvRegister = findViewById<TextView>(R.id.tvRegister)
+        val tvForgotPassword = findViewById<TextView>(R.id.tvForgotPassword)
         val btnRoleStudent = findViewById<Button>(R.id.btnRoleStudent)
         val btnRoleWorker = findViewById<Button>(R.id.btnRoleWorker)
         val tvAppName = findViewById<TextView>(R.id.tvAppName)
@@ -142,44 +160,45 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Hardcoded Admin Login
-            if (email == "javeedzoj@gmail.com" && password == "javeedJaV") {
-                // Show dialog for admin to select Student or Worker admin mode
-                val options = arrayOf("Student Admin", "Worker Admin")
-                val builder = android.app.AlertDialog.Builder(this)
-                builder.setTitle("Select Admin Mode")
-                builder.setItems(options) { dialog, which ->
-                    val adminMode = if (which == 0) "student" else "worker"
-                    Toast.makeText(this, "Admin Login Successful!", Toast.LENGTH_SHORT).show()
-                    
-                    val intent = Intent(this, AdminDashboardActivity::class.java)
-                    intent.putExtra("ADMIN_MODE", adminMode)
-                    startActivity(intent)
-                    finish()
-                }
-                builder.setOnCancelListener {
-                    // User cancelled, do nothing
-                }
-                builder.show()
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (password.length < 6) {
+                Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show()
-                        
-                        // Save the role preference
-                        val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
-                        sharedPref.edit().putBoolean("isWorker", isWorkerSelected).apply()
-                        
-                        val intent = if (isWorkerSelected) {
-                            Intent(this, WorkerActivity::class.java)
-                        } else {
-                            Intent(this, StudentHomeActivity::class.java)
-                        }
-                        startActivity(intent)
-                        finish()
+                        val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
+                        // Check role from Firebase RTDB to detect admin
+                        val database = FirebaseDatabase.getInstance().reference
+                        val dbNode = if (isWorkerSelected) "workers" else "users"
+                        database.child(dbNode).child(uid).child("role").get()
+                            .addOnSuccessListener { snapshot ->
+                                val role = snapshot.value?.toString() ?: if (isWorkerSelected) "worker" else "student"
+                                val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                                sharedPref.edit()
+                                    .putBoolean("isWorker", isWorkerSelected)
+                                    .putString("userRole", role)
+                                    .apply()
+                                Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show()
+                                if (!isFinishing && !isDestroyed) navigateByRole(role)
+                            }
+                            .addOnFailureListener {
+                                // Fallback to toggle selection
+                                val role = if (isWorkerSelected) "worker" else "student"
+                                val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                                sharedPref.edit()
+                                    .putBoolean("isWorker", isWorkerSelected)
+                                    .putString("userRole", role)
+                                    .apply()
+                                Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show()
+                                if (!isFinishing && !isDestroyed) navigateByRole(role)
+                            }
                     } else {
                         val errorMessage = when {
                             task.exception?.message?.contains("no user record", ignoreCase = true) == true -> 
@@ -195,9 +214,55 @@ class MainActivity : AppCompatActivity() {
                 }
         }
 
+        tvForgotPassword.setOnClickListener {
+            showForgotPasswordDialog()
+        }
+
         tvRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+    }
+
+    private fun navigateByRole(role: String) {
+        val intent = when (role) {
+            "admin" -> Intent(this, AdminDashboardActivity::class.java)
+            "worker" -> Intent(this, WorkerActivity::class.java)
+            else -> Intent(this, StudentHomeActivity::class.java)
+        }
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun showForgotPasswordDialog() {
+        val etEmail = EditText(this)
+        etEmail.hint = "Enter your email address"
+        etEmail.inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+
+        AlertDialog.Builder(this)
+            .setTitle("Reset Password")
+            .setMessage("Enter your email address and we'll send you a password reset link.")
+            .setView(etEmail)
+            .setPositiveButton("Send") { _, _ ->
+                val email = etEmail.text.toString().trim()
+                if (email.isEmpty()) {
+                    Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                auth.sendPasswordResetEmail(email)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "Password reset email sent!", Toast.LENGTH_LONG).show()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
     
     private fun animateTitleChange(tvAppName: TextView, tvTagline: TextView, newTitle: String, newTagline: String, isLeftToRight: Boolean) {
