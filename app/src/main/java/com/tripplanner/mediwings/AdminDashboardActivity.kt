@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import jp.wasabeef.richeditor.RichEditor
@@ -22,6 +23,12 @@ class AdminDashboardActivity : AppCompatActivity() {
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private var adminMode: String = "student" // "student" or "worker"
+
+    // Realtime listener references (registered in onStart, removed in onStop)
+    private var usersListener: ValueEventListener? = null
+    private var chatsListener: ValueEventListener? = null
+    private var usersRef: DatabaseReference? = null
+    private var chatsRef: DatabaseReference? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,15 +46,15 @@ class AdminDashboardActivity : AppCompatActivity() {
         richEditor.setInputEnabled(true)
         richEditor.focusEditor()
         
-        // Set title based on admin mode
-        supportActionBar?.title = if (adminMode == "worker") "Worker Admin Dashboard" else "Student Admin Dashboard"
+        // Set title and subtitle based on admin mode
+        val roleLabel = if (adminMode == "worker") "Worker Admin" else "Student Admin"
+        supportActionBar?.title = "$roleLabel Dashboard"
+        val tvRoleChip = findViewById<TextView>(R.id.tvAdminRoleChip)
+        tvRoleChip.text = roleLabel
         
         // Update button labels based on mode
         val btnAdminStudents = findViewById<Button>(R.id.btnAdminStudents)
         btnAdminStudents.text = if (adminMode == "worker") "WORKERS" else "STUDENTS"
-        
-        // Load dashboard stats
-        loadDashboardStats()
 
         btnAdminStudents.setOnClickListener {
             val intent = Intent(this, UserListActivity::class.java)
@@ -76,61 +83,35 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
         // Rich text formatting buttons
-        findViewById<Button>(R.id.btnBold).setOnClickListener {
-            richEditor.setBold()
-        }
+        findViewById<Button>(R.id.btnBold).setOnClickListener { richEditor.setBold() }
+        findViewById<Button>(R.id.btnItalic).setOnClickListener { richEditor.setItalic() }
+        findViewById<Button>(R.id.btnUnderline).setOnClickListener { richEditor.setUnderline() }
+        findViewById<Button>(R.id.btnH1).setOnClickListener { richEditor.setHeading(1) }
+        findViewById<Button>(R.id.btnH2).setOnClickListener { richEditor.setHeading(2) }
+        findViewById<Button>(R.id.btnBullets).setOnClickListener { richEditor.setBullets() }
+        findViewById<Button>(R.id.btnNumbers).setOnClickListener { richEditor.setNumbers() }
+        findViewById<Button>(R.id.btnInsertImage).setOnClickListener { showImageUrlDialog() }
+        findViewById<Button>(R.id.btnInsertLink).setOnClickListener { showLinkDialog() }
 
-        findViewById<Button>(R.id.btnItalic).setOnClickListener {
-            richEditor.setItalic()
-        }
-
-        findViewById<Button>(R.id.btnUnderline).setOnClickListener {
-            richEditor.setUnderline()
-        }
-
-        findViewById<Button>(R.id.btnH1).setOnClickListener {
-            richEditor.setHeading(1)
-        }
-
-        findViewById<Button>(R.id.btnH2).setOnClickListener {
-            richEditor.setHeading(2)
-        }
-
-        findViewById<Button>(R.id.btnBullets).setOnClickListener {
-            richEditor.setBullets()
-        }
-
-        findViewById<Button>(R.id.btnNumbers).setOnClickListener {
-            richEditor.setNumbers()
-        }
-
-        findViewById<Button>(R.id.btnInsertImage).setOnClickListener {
-            showImageUrlDialog()
-        }
-
-        findViewById<Button>(R.id.btnInsertLink).setOnClickListener {
-            showLinkDialog()
-        }
-
+        // Save CMS with confirmation dialog
         findViewById<Button>(R.id.btnSaveCMS).setOnClickListener {
             val content = richEditor.html ?: ""
             if (content.isEmpty()) {
                 Toast.makeText(this, "Cannot save empty content", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            
-            database.reference.child("CMS").child("home_content").setValue(content)
-                .addOnSuccessListener {
-                    Toast.makeText(this, "Home Page Updated Successfully!", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { exception ->
-                    Toast.makeText(this, "Failed to update: ${exception.message}", Toast.LENGTH_LONG).show()
-                }
+            AlertDialog.Builder(this)
+                .setTitle("Publish Content")
+                .setMessage("Are you sure you want to publish this content to the home page?")
+                .setPositiveButton("Publish") { _, _ -> saveCmsContent(content) }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
 
-        // Load existing content
+        // Load existing CMS content
         database.reference.child("CMS").child("home_content").get()
             .addOnSuccessListener {
+                if (isFinishing || isDestroyed) return@addOnSuccessListener
                 try {
                     if (it.exists()) {
                         richEditor.html = it.value.toString()
@@ -140,12 +121,16 @@ class AdminDashboardActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { exception ->
-                Toast.makeText(this, "Failed to load content: ${exception.message}", Toast.LENGTH_LONG).show()
+                if (isFinishing || isDestroyed) return@addOnFailureListener
+                Toast.makeText(
+                    this,
+                    "Failed to load content. Check network/permissions: ${exception.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         
         findViewById<Button>(R.id.btnAdminLogout).setOnClickListener {
             auth.signOut()
-            // Clear saved preferences
             val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
             sharedPref.edit().clear().apply()
             startActivity(Intent(this, MainActivity::class.java))
@@ -153,77 +138,118 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadDashboardStats() {
+    override fun onStart() {
+        super.onStart()
+        registerRealtimeListeners()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        removeRealtimeListeners()
+    }
+
+    private fun registerRealtimeListeners() {
         val tvTotalStudents = findViewById<TextView>(R.id.tvTotalStudents)
         val tvActiveChats = findViewById<TextView>(R.id.tvActiveChats)
-        
-        // Initialize with loading state
         tvTotalStudents.text = "..."
         tvActiveChats.text = "..."
-        
-        try {
-            // Count total users based on admin mode (single read)
-            // Workers are stored in "workers" node, students in "users" node
-            val dbNode = if (adminMode == "worker") "workers" else "users"
-            database.reference.child(dbNode).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    try {
-                        if (!snapshot.exists()) {
-                            tvTotalStudents.text = "0"
-                            return
-                        }
-                        var userCount = 0
-                        for (userSnapshot in snapshot.children) {
-                            val role = userSnapshot.child("role").value?.toString()
-                            // Count users that are not admin
-                            if (role != "admin") {
-                                userCount++
-                            }
-                        }
-                        tvTotalStudents.text = userCount.toString()
-                    } catch (e: Exception) {
-                        Toast.makeText(this@AdminDashboardActivity, "Error loading user stats: ${e.message}", Toast.LENGTH_SHORT).show()
-                        tvTotalStudents.text = "0"
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@AdminDashboardActivity, "Failed to load user stats: ${error.message}", Toast.LENGTH_SHORT).show()
+
+        // Realtime listener for user count
+        val dbNode = if (adminMode == "worker") "workers" else "users"
+        usersRef = database.reference.child(dbNode)
+        val uRef = usersRef ?: return
+        val uListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (isFinishing || isDestroyed) return
+                if (!snapshot.exists()) {
                     tvTotalStudents.text = "0"
+                    return
                 }
-            })
-            
-            // Count active chats for this role (single read)
-            database.reference.child("Chats").addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    try {
-                        if (!snapshot.exists()) {
-                            tvActiveChats.text = "0"
-                            return
-                        }
-                        var chatCount = 0
-                        for (chatSnapshot in snapshot.children) {
-                            val chatId = chatSnapshot.key ?: continue
-                            // Check if chat ID ends with the current admin mode (role)
-                            if (chatId.endsWith("_$adminMode")) {
-                                chatCount++
-                            }
-                        }
-                        tvActiveChats.text = chatCount.toString()
-                    } catch (e: Exception) {
-                        Toast.makeText(this@AdminDashboardActivity, "Error loading chat stats: ${e.message}", Toast.LENGTH_SHORT).show()
-                        tvActiveChats.text = "0"
-                    }
+                var userCount = 0
+                for (userSnapshot in snapshot.children) {
+                    val role = userSnapshot.child("role").value?.toString()
+                    if (role != "admin") userCount++
                 }
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@AdminDashboardActivity, "Failed to load chat stats: ${error.message}", Toast.LENGTH_SHORT).show()
-                    tvActiveChats.text = "0"
-                }
-            })
-        } catch (e: Exception) {
-            Toast.makeText(this, "Error initializing dashboard: ${e.message}", Toast.LENGTH_LONG).show()
-            tvTotalStudents.text = "0"
-            tvActiveChats.text = "0"
+                tvTotalStudents.text = userCount.toString()
+            }
+            override fun onCancelled(error: DatabaseError) {
+                if (isFinishing || isDestroyed) return
+                tvTotalStudents.text = "!"
+                Toast.makeText(
+                    this@AdminDashboardActivity,
+                    "Failed to load user stats. Check network/permissions: ${error.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
+        usersListener = uListener
+        uRef.addValueEventListener(uListener)
+
+        // Realtime listener for chat count
+        chatsRef = database.reference.child("Chats")
+        val cRef = chatsRef ?: return
+        val cListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (isFinishing || isDestroyed) return
+                if (!snapshot.exists()) {
+                    tvActiveChats.text = "0"
+                    return
+                }
+                var chatCount = 0
+                for (chatSnapshot in snapshot.children) {
+                    val chatId = chatSnapshot.key ?: continue
+                    if (chatId.endsWith("_$adminMode")) chatCount++
+                }
+                tvActiveChats.text = chatCount.toString()
+            }
+            override fun onCancelled(error: DatabaseError) {
+                if (isFinishing || isDestroyed) return
+                tvActiveChats.text = "!"
+                Toast.makeText(
+                    this@AdminDashboardActivity,
+                    "Failed to load chat stats. Check network/permissions: ${error.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        chatsListener = cListener
+        cRef.addValueEventListener(cListener)
+    }
+
+    private fun removeRealtimeListeners() {
+        usersListener?.let { usersRef?.removeEventListener(it) }
+        chatsListener?.let { chatsRef?.removeEventListener(it) }
+        usersListener = null
+        chatsListener = null
+    }
+
+    private fun saveCmsContent(content: String) {
+        val userEmail = auth.currentUser?.email ?: "unknown"
+        val roleLabel = if (adminMode == "worker") "Worker Admin" else "Student Admin"
+        val timestamp = System.currentTimeMillis()
+
+        database.reference.child("CMS").child("home_content").setValue(content)
+            .addOnSuccessListener {
+                if (isFinishing || isDestroyed) return@addOnSuccessListener
+                Toast.makeText(this, "Home Page Updated Successfully!", Toast.LENGTH_SHORT).show()
+                // Write lightweight audit entry
+                val auditEntry = mapOf(
+                    "userEmail" to userEmail,
+                    "role" to roleLabel,
+                    "action" to "publish_home_content",
+                    "timestamp" to timestamp
+                )
+                database.reference.child("CMS").child("audit").child(timestamp.toString())
+                    .setValue(auditEntry)
+            }
+            .addOnFailureListener { exception ->
+                if (isFinishing || isDestroyed) return@addOnFailureListener
+                Toast.makeText(
+                    this,
+                    "Failed to update. Check network/permissions: ${exception.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
     }
     
     private fun showImageUrlDialog() {
@@ -243,18 +269,15 @@ class AdminDashboardActivity : AppCompatActivity() {
         builder.setPositiveButton("Insert") { dialog, _ ->
             val url = input.text.toString().trim()
             if (url.isNotEmpty() && isValidImageUrl(url)) {
-                // Use screen width for responsive image sizing
                 val screenWidth = resources.displayMetrics.widthPixels
-                val imageWidth = (screenWidth * 0.9).toInt() // 90% of screen width
+                val imageWidth = (screenWidth * 0.9).toInt()
                 richEditor.insertImage(url, "image", imageWidth)
             } else {
                 Toast.makeText(this, "Please enter a valid image URL (http:// or https://)", Toast.LENGTH_SHORT).show()
             }
             dialog.dismiss()
         }
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.cancel()
-        }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
         
         builder.show()
     }
@@ -287,9 +310,7 @@ class AdminDashboardActivity : AppCompatActivity() {
             }
             dialog.dismiss()
         }
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.cancel()
-        }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
         
         builder.show()
     }
@@ -302,3 +323,4 @@ class AdminDashboardActivity : AppCompatActivity() {
         return url.startsWith("http://") || url.startsWith("https://")
     }
 }
+

@@ -65,4 +65,7 @@ dependencies {
     
     // Circle Image View
     implementation("de.hdodenhof:circleimageview:3.1.0")
+
+    // SwipeRefreshLayout
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }

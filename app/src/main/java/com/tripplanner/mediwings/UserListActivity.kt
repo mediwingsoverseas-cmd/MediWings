@@ -7,11 +7,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
@@ -22,11 +24,17 @@ import java.util.*
 class UserListActivity : AppCompatActivity() {
 
     private lateinit var rvUserList: RecyclerView
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var llEmptyState: LinearLayout
+    private lateinit var tvEmptyStateText: TextView
     private lateinit var database: DatabaseReference
     private lateinit var firestore: FirebaseFirestore
     private var mode: String? = null 
     private var userRole: String = "student" 
     private lateinit var auth: FirebaseAuth
+
+    private val userList = mutableListOf<UserDataWithChat>()
+    private lateinit var adapter: UserAdapter
     
     companion object {
         private const val TAG = "UserListActivity"
@@ -51,10 +59,15 @@ class UserListActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener { finish() }
 
         rvUserList = findViewById(R.id.rvUserList)
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
+        llEmptyState = findViewById(R.id.llEmptyState)
+        tvEmptyStateText = findViewById(R.id.tvEmptyStateText)
+
+        // Update empty state text based on role
+        tvEmptyStateText.text = if (userRole == "worker") "No workers found" else "No students found"
+
         rvUserList.layoutManager = LinearLayoutManager(this)
-        
-        val userList = mutableListOf<UserDataWithChat>()
-        val adapter = UserAdapter(userList) { user ->
+        adapter = UserAdapter(userList) { user ->
             if (mode == "chat") {
                 val intent = Intent(this, ChatActivity::class.java)
                 intent.putExtra("USER_ID", user.userData.uid)
@@ -71,9 +84,15 @@ class UserListActivity : AppCompatActivity() {
         }
         rvUserList.adapter = adapter
 
-        // Always load from Realtime Database as primary for list (more reliable registration source)
+        swipeRefreshLayout.setOnRefreshListener { loadUsers() }
+
+        loadUsers()
+    }
+
+    private fun loadUsers() {
+        swipeRefreshLayout.isRefreshing = true
         val dbNode = if (userRole == "worker") "workers" else "users"
-        database.child(dbNode).addValueEventListener(object : ValueEventListener {
+        database.child(dbNode).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
                     val usersToLoad = mutableListOf<UserData>()
@@ -87,29 +106,36 @@ class UserListActivity : AppCompatActivity() {
                         val isOnline = data.child("online").getValue(Boolean::class.java) ?: false
                         usersToLoad.add(UserData(uid, name, profilePic, isOnline))
                     }
+                    // Sort alphabetically by name
+                    usersToLoad.sortBy { it.name }
                     
                     if (usersToLoad.isNotEmpty()) {
-                        loadChatMetadata(usersToLoad, userList, adapter)
+                        loadChatMetadata(usersToLoad)
                     } else {
-                        userList.clear()
-                        adapter.notifyDataSetChanged()
+                        swipeRefreshLayout.isRefreshing = false
+                        updateEmptyState(true)
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error loading users", e)
+                    swipeRefreshLayout.isRefreshing = false
+                    Toast.makeText(this@UserListActivity, "Error loading users: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                swipeRefreshLayout.isRefreshing = false
+                Toast.makeText(this@UserListActivity, "Failed to load users: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
         })
     }
     
-    private fun loadChatMetadata(users: List<UserData>, userList: MutableList<UserDataWithChat>, adapter: UserAdapter) {
+    private fun loadChatMetadata(users: List<UserData>) {
         val chatsRef = database.child("Chats")
         val newList = mutableListOf<UserDataWithChat>()
         var loadedCount = 0
         
         if (users.isEmpty()) {
-            userList.clear()
-            adapter.notifyDataSetChanged()
+            updateEmptyState(true)
+            swipeRefreshLayout.isRefreshing = false
             return
         }
 
@@ -129,6 +155,8 @@ class UserListActivity : AppCompatActivity() {
                         userList.clear()
                         userList.addAll(newList)
                         adapter.notifyDataSetChanged()
+                        updateEmptyState(userList.isEmpty())
+                        swipeRefreshLayout.isRefreshing = false
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {
@@ -137,9 +165,21 @@ class UserListActivity : AppCompatActivity() {
                         userList.clear()
                         userList.addAll(newList)
                         adapter.notifyDataSetChanged()
+                        updateEmptyState(userList.isEmpty())
+                        swipeRefreshLayout.isRefreshing = false
                     }
                 }
             })
+        }
+    }
+
+    private fun updateEmptyState(isEmpty: Boolean) {
+        if (isEmpty) {
+            rvUserList.visibility = View.GONE
+            llEmptyState.visibility = View.VISIBLE
+        } else {
+            rvUserList.visibility = View.VISIBLE
+            llEmptyState.visibility = View.GONE
         }
     }
 
