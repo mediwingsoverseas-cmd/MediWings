@@ -10,8 +10,6 @@ data class User(
     val email: String = "",
     val mobile: String = "",
     val role: String = "student",
-    val photoUrl: String = "",
-    val documents: Map<String, String> = emptyMap(),
-    val fcmToken: String = "",
-    val online: Boolean = false
+    val profileImage: String = "",
+    val documents: Map<String, String> = emptyMap()
 )
