@@ -113,6 +113,12 @@ cd MediWings
            ".write": "auth != null && auth.uid == $uid"
          }
        },
+       "workers": {
+         "$uid": {
+           ".read": "auth != null",
+           ".write": "auth != null && auth.uid == $uid"
+         }
+       },
        "Chats": {
          "$chatId": {
            ".read": "auth != null",
@@ -122,6 +128,12 @@ cd MediWings
        "NotificationQueue": {
          ".read": "auth != null",
          ".write": "auth != null"
+       },
+       "Tracking": {
+         "$uid": {
+           ".read": "auth != null",
+           ".write": "auth != null"
+         }
        },
        "CMS": {
          ".read": "true",
