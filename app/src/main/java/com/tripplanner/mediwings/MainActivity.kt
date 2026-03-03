@@ -235,7 +235,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showForgotPasswordDialog() {
-        val dialogView = layoutInflater.inflate(android.R.layout.simple_list_item_1, null)
         val etEmail = EditText(this)
         etEmail.hint = "Enter your email address"
         etEmail.inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
