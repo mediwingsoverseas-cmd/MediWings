@@ -83,7 +83,7 @@ class UserListActivity : AppCompatActivity() {
                         if (role.equals("admin", ignoreCase = true)) continue
                         
                         val name = data.child("name").value?.toString() ?: "Unknown"
-                        val profilePic = data.child("profilePic").value?.toString() ?: ""
+                        val profilePic = data.child("photoUrl").value?.toString() ?: ""
                         val isOnline = data.child("online").getValue(Boolean::class.java) ?: false
                         usersToLoad.add(UserData(uid, name, profilePic, isOnline))
                     }

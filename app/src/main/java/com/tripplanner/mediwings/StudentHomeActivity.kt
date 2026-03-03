@@ -73,7 +73,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_studend)
+        setContentView(R.layout.activity_student_home)
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().reference
@@ -291,7 +291,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                     val name = snapshot.child("name").value?.toString() ?: ""
                     val email = snapshot.child("email").value?.toString() ?: ""
                     val mobile = snapshot.child("mobile").value?.toString() ?: ""
-                    val pic = snapshot.child("profilePic").value?.toString()
+                    val pic = snapshot.child("photoUrl").value?.toString()
 
                     tvName?.text = name
                     tvEmail?.text = email
@@ -435,7 +435,7 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                 progressDialog.dismiss()
                 val url = downloadUri.toString()
                 if (type == "profile") {
-                    database.child("users").child(userId).child("profilePic").setValue(url)
+                    database.child("users").child(userId).child("photoUrl").setValue(url)
                     firestore.collection("users").document(userId).update("photoUrl", url)
                 } else {
                     database.child("users").child(userId).child("documents").child(type).setValue(url)
@@ -530,7 +530,19 @@ class StudentHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItem
                 intent.putExtra("USER_ROLE", "student")
                 startActivity(intent)
             }
-            R.id.nav_logout -> { auth.signOut(); startActivity(Intent(this, MainActivity::class.java)); finish() }
+            R.id.nav_about -> startActivity(Intent(this, AboutActivity::class.java))
+            R.id.nav_logout -> {
+                val uid = auth.currentUser?.uid
+                if (uid != null) {
+                    database.child("users").child(uid).child("online").setValue(false)
+                }
+                getSharedPreferences("MediWingsPrefs", MODE_PRIVATE).edit().clear().apply()
+                auth.signOut()
+                val intent = Intent(this, MainActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
         }
         drawerLayout.closeDrawer(GravityCompat.START)
         return true

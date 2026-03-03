@@ -144,11 +144,16 @@ class AdminDashboardActivity : AppCompatActivity() {
             }
         
         findViewById<Button>(R.id.btnAdminLogout).setOnClickListener {
+            val uid = auth.currentUser?.uid
+            val database = com.google.firebase.database.FirebaseDatabase.getInstance().reference
+            if (uid != null) {
+                database.child("users").child(uid).child("online").setValue(false)
+            }
+            getSharedPreferences("MediWingsPrefs", MODE_PRIVATE).edit().clear().apply()
             auth.signOut()
-            // Clear saved preferences
-            val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
-            sharedPref.edit().clear().apply()
-            startActivity(Intent(this, MainActivity::class.java))
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
             finish()
         }
     }
