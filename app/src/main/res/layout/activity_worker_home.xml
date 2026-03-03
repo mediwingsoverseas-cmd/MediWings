@@ -971,7 +971,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:background="@color/background_card"
-            app:menu="@menu/home_bottom_nav"
+            app:menu="@menu/worker_bottom_nav"
             app:itemIconTint="@color/worker_button"
             app:itemTextColor="@color/text_primary"
             app:labelVisibilityMode="labeled" />
