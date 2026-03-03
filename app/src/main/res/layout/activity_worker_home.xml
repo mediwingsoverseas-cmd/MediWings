@@ -85,6 +85,139 @@
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
 
+                    <!-- Student Home Section (hidden for workers) -->
+                    <LinearLayout
+                        android:id="@+id/student_home_section"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvBannersHome"
+                            android:layout_width="match_parent"
+                            android:layout_height="220dp"
+                            android:layout_marginBottom="16dp"
+                            android:orientation="horizontal"
+                            android:clipToPadding="false"
+                            android:scrollbars="none" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+
+                            <androidx.cardview.widget.CardView
+                                android:id="@+id/cardViewDocuments"
+                                android:layout_width="0dp"
+                                android:layout_height="100dp"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="6dp"
+                                app:cardCornerRadius="12dp"
+                                app:cardElevation="3dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?android:attr/selectableItemBackground"
+                                app:cardBackgroundColor="@color/background_card">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:orientation="vertical"
+                                    android:gravity="center"
+                                    android:padding="8dp">
+                                    <ImageView
+                                        android:layout_width="32dp"
+                                        android:layout_height="32dp"
+                                        android:src="@drawable/ic_document"
+                                        app:tint="@color/student_button" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Docs"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </androidx.cardview.widget.CardView>
+
+                            <androidx.cardview.widget.CardView
+                                android:id="@+id/cardViewUniversities"
+                                android:layout_width="0dp"
+                                android:layout_height="100dp"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="3dp"
+                                app:cardCornerRadius="12dp"
+                                app:cardElevation="3dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?android:attr/selectableItemBackground"
+                                app:cardBackgroundColor="@color/background_card">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:orientation="vertical"
+                                    android:gravity="center"
+                                    android:padding="8dp">
+                                    <ImageView
+                                        android:layout_width="32dp"
+                                        android:layout_height="32dp"
+                                        android:src="@drawable/ic_university"
+                                        app:tint="@color/student_button" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Universities"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </androidx.cardview.widget.CardView>
+
+                            <androidx.cardview.widget.CardView
+                                android:id="@+id/cardViewTracking"
+                                android:layout_width="0dp"
+                                android:layout_height="100dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                app:cardCornerRadius="12dp"
+                                app:cardElevation="3dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?android:attr/selectableItemBackground"
+                                app:cardBackgroundColor="@color/background_card">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:orientation="vertical"
+                                    android:gravity="center"
+                                    android:padding="8dp">
+                                    <ImageView
+                                        android:layout_width="32dp"
+                                        android:layout_height="32dp"
+                                        android:src="@drawable/ic_verified"
+                                        app:tint="@color/student_button" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Status"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </androidx.cardview.widget.CardView>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Worker Home Actions (hidden for students) -->
+                    <LinearLayout
+                        android:id="@+id/worker_home_actions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
                     <!-- Quick Actions Title -->
                     <TextView
                         android:layout_width="wrap_content"
@@ -274,6 +407,9 @@
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
 
+                    </LinearLayout>
+                    <!-- End worker_home_actions -->
+
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
 
@@ -299,6 +435,13 @@
                         android:textStyle="bold"
                         android:layout_marginBottom="16dp"
                         android:fontFamily="sans-serif-medium" />
+
+                    <!-- Worker Documents Section (hidden for students) -->
+                    <LinearLayout
+                        android:id="@+id/worker_docs_section"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
 
                     <!-- Resume Card -->
                     <androidx.cardview.widget.CardView
@@ -425,6 +568,172 @@
 
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+                    <!-- End worker_docs_section -->
+
+                    <!-- Student Documents Section (hidden for workers) -->
+                    <LinearLayout
+                        android:id="@+id/student_docs_section"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Photos"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivPhotosPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"
+                                    android:visibility="gone"/>
+                                <Button
+                                    android:id="@+id/btnUploadPhotos"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload Photo"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Aadhar Card"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivAadharPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"
+                                    android:visibility="gone"/>
+                                <Button
+                                    android:id="@+id/btnUploadAadhar"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload Aadhar"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Passport"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivPassportPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"
+                                    android:visibility="gone"/>
+                                <Button
+                                    android:id="@+id/btnUploadPassport"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload Passport"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="16dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="HIV Report"
+                                    android:textColor="@color/primary_premium"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"/>
+                                <ImageView
+                                    android:id="@+id/ivHIVPreview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="180dp"
+                                    android:layout_marginTop="8dp"
+                                    android:background="#F0F0F0"
+                                    android:scaleType="centerInside"
+                                    android:src="@android:drawable/ic_menu_camera"
+                                    android:visibility="gone"/>
+                                <Button
+                                    android:id="@+id/btnUploadHIV"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload HIV Report"
+                                    android:backgroundTint="@color/gold_premium"
+                                    android:textColor="@color/primary_premium"
+                                    android:layout_marginTop="8dp"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+                    <!-- End student_docs_section -->
 
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
@@ -603,6 +912,56 @@
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
 
+            <!-- UNIVERSITIES VIEW (student only) -->
+            <LinearLayout
+                android:id="@+id/universities_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvUniversitiesHome"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp" />
+            </LinearLayout>
+
+            <!-- STATUS VIEW (student only) -->
+            <ScrollView
+                android:id="@+id/status_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="4dp"
+                        app:cardBackgroundColor="@color/white">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <include layout="@layout/layout_timeline_item" android:id="@+id/step_application" />
+                            <include layout="@layout/layout_timeline_item" android:id="@+id/step_documents" />
+                            <include layout="@layout/layout_timeline_item" android:id="@+id/step_verification" />
+                            <include layout="@layout/layout_timeline_item" android:id="@+id/step_visa" />
+                            <include layout="@layout/layout_timeline_item" android:id="@+id/step_flight" />
+
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                </LinearLayout>
+            </ScrollView>
+
         </FrameLayout>
 
         <!-- Bottom Navigation -->
@@ -612,7 +971,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:background="@color/background_card"
-            app:menu="@menu/worker_bottom_nav"
+            app:menu="@menu/home_bottom_nav"
             app:itemIconTint="@color/worker_button"
             app:itemTextColor="@color/text_primary"
             app:labelVisibilityMode="labeled" />
@@ -627,7 +986,7 @@
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header"
-        app:menu="@menu/worker_drawer_menu"
+        app:menu="@menu/home_drawer_menu"
         app:itemIconTint="@color/worker_button"
         app:itemTextColor="@color/text_primary" />
 
