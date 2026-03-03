@@ -8,7 +8,7 @@ data class User(
     val uid: String = "",
     val name: String = "",
     val email: String = "",
-    val phone: String = "",
+    val mobile: String = "",
     val role: String = "student",
     val profileImage: String = "",
     val documents: Map<String, String> = emptyMap()
