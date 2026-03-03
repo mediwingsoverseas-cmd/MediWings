@@ -17,6 +17,7 @@
         android:theme="@style/Theme.MediWings">
 
         <activity android:name=".RegisterActivity" />
+        <activity android:name=".HomeActivity" />
         <activity android:name=".StudentHomeActivity" />
         <activity android:name=".WorkerActivity" />
         <activity android:name=".WorkerHomeActivity" />

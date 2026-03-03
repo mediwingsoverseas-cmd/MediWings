@@ -27,11 +27,8 @@ class MainActivity : AppCompatActivity() {
             // User is signed in, check role and navigate
             val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
             val isWorker = sharedPref.getBoolean("isWorker", false)
-            val intent = if (isWorker) {
-                Intent(this, WorkerActivity::class.java)
-            } else {
-                Intent(this, StudentHomeActivity::class.java)
-            }
+            val intent = Intent(this, HomeActivity::class.java)
+            intent.putExtra(HomeActivity.EXTRA_USER_ROLE, if (isWorker) "worker" else "student")
             startActivity(intent)
             finish()
             return
@@ -173,11 +170,8 @@ class MainActivity : AppCompatActivity() {
                         val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
                         sharedPref.edit().putBoolean("isWorker", isWorkerSelected).apply()
                         
-                        val intent = if (isWorkerSelected) {
-                            Intent(this, WorkerActivity::class.java)
-                        } else {
-                            Intent(this, StudentHomeActivity::class.java)
-                        }
+                        val intent = Intent(this, HomeActivity::class.java)
+                        intent.putExtra(HomeActivity.EXTRA_USER_ROLE, if (isWorkerSelected) "worker" else "student")
                         startActivity(intent)
                         finish()
                     } else {
