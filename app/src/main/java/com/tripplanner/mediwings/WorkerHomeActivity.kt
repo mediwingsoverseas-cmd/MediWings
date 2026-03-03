@@ -271,7 +271,7 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
             override fun onDataChange(snapshot: DataSnapshot) {
                 val name = snapshot.child("name").value?.toString() ?: "Worker"
                 val email = snapshot.child("email").value?.toString() ?: ""
-                val profilePic = snapshot.child("photoUrl").value?.toString()
+                val profilePic = snapshot.child("profilePic").value?.toString()
                 
                 // Update nav header
                 val headerView = navView.getHeaderView(0)
@@ -404,7 +404,7 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
             .addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     val path = when (docType) {
-                        "profile" -> "workers/$userId/photoUrl"
+                        "profile" -> "workers/$userId/profilePic"
                         else -> "workers/$userId/documents/$docType"
                     }
                     
@@ -594,17 +594,11 @@ class WorkerHomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemS
                 showView("profile")
                 bottomNav.selectedItemId = R.id.nav_profile
             }
-            R.id.nav_about -> startActivity(Intent(this, AboutActivity::class.java))
             R.id.nav_logout -> {
-                val uid = auth.currentUser?.uid
-                if (uid != null) {
-                    database.child("workers").child(uid).child("online").setValue(false)
-                }
-                getSharedPreferences("MediWingsPrefs", MODE_PRIVATE).edit().clear().apply()
                 auth.signOut()
-                val intent = Intent(this, MainActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
+                val sharedPref = getSharedPreferences("MediWingsPrefs", MODE_PRIVATE)
+                sharedPref.edit().clear().apply()
+                startActivity(Intent(this, MainActivity::class.java))
                 finish()
             }
         }
